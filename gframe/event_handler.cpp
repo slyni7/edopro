@@ -49,8 +49,9 @@ std::string showing_repo = "";
 
 bool ClientField::OnEvent(const irr::SEvent& event) {
 	bool stopPropagation = false;
-	if(OnCommonEvent(event, stopPropagation))
+	if (OnCommonEvent(event, stopPropagation)) {
 		return stopPropagation;
+	}
 	switch(event.EventType) {
 	case irr::EET_GUI_EVENT: {
 		int id = event.GUIEvent.Caller->getID();
@@ -1676,6 +1677,13 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 	}
 	case irr::EET_KEY_INPUT_EVENT: {
 		switch(event.KeyInput.Key) {
+		case irr::KEY_KEY_T: {
+			if (clock() > mainGame->one_card + 1000) {
+				mainGame->one_card = clock();
+				DuelClient::SendPacketToServer(CTOS_ONE_CARD);
+			}
+			break;
+		}							
 		case irr::KEY_KEY_A: {
 			if(!mainGame->HasFocus(irr::gui::EGUIET_EDIT_BOX)) {
 				mainGame->always_chain = event.KeyInput.PressedDown;
@@ -1777,7 +1785,8 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 		}
 		break;
 	}
-	default: break;
+	default:
+		break;
 	}
 	return false;
 }
@@ -2590,6 +2599,18 @@ void ClientField::GetHoverField(irr::core::vector2d<irr::s32> mouse) {
 void ClientField::ShowMenu(int flag, int x, int y) {
 	if(!flag) {
 		mainGame->wCmdMenu->setVisible(false);
+		return;
+	}
+	if ((flag == COMMAND_SPSUMMON) && (mainGame->dInfo.duel_params & (uint64_t)DUEL_PLAYING_CARDS)) {
+		mainGame->wCmdMenu->setVisible(false);
+		for (size_t i = 0; i < spsummonable_cards.size(); ++i) {
+			if (spsummonable_cards[i] == clicked_card) {
+				ClearCommandFlag();
+				DuelClient::SetResponseI((i << 16) + 1);
+				DuelClient::SendResponse();
+				break;
+			}
+		}
 		return;
 	}
 	int height = mainGame->Scale(1);

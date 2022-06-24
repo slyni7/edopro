@@ -30,6 +30,7 @@ public:
 	virtual void TPResult(DuelPlayer* dp, uint8_t tp);
 	virtual void Process();
 	virtual void Surrender(DuelPlayer* dp);
+	virtual void OneCard(DuelPlayer* dp);
 	virtual int Analyze(CoreUtils::Packet packet);
 	virtual void GetResponse(DuelPlayer* dp, void* pdata, uint32_t len);
 	virtual void TimeConfirm(DuelPlayer* dp);

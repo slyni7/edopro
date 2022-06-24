@@ -751,6 +751,8 @@ void DuelClient::HandleSTOCPacketLanAsync(const std::vector<uint8_t>& data) {
 				str.append(fmt::format(L"*{}\n", gDataManager->GetSysString(1259)));
 			} else if(params  == DUEL_MODE_GOAT) {
 				str.append(fmt::format(L"*{}\n", gDataManager->GetSysString(1248)));
+			} else if (params == DUEL_MODE_PLAYING) {
+				str.append(fmt::format(L"*{}\n", gDataManager->GetSysString(1248)));
 			} else {
 				uint64_t filter = 0x100;
 				for(int i = 0; filter && i < sizeofarr(mainGame->chkCustomRules); ++i, filter <<= 1)

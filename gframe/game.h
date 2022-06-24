@@ -288,6 +288,7 @@ public:
 	bool cardimagetextureloading;
 	float dpi_scale;
 
+	double one_card = 0;
 
 	irr::core::dimension2d<irr::u32> window_size;
 	irr::core::vector2d<irr::f32> window_scale;

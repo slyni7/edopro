@@ -278,6 +278,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					mainGame->forbiddentypes = DUEL_MODE_MR1_FORB;
 					break;
 				}
+				case 8: {
+					mainGame->duel_param = DUEL_MODE_PLAYING;
+					mainGame->forbiddentypes = 0;
+					break;
+				}
 				}
 #undef CHECK
 				mainGame->duel_param |= tcg;
@@ -983,9 +988,16 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					mainGame->ebStartHand->setText(L"5");
 					goto remove;
 				}
+				case 8: {
+					mainGame->duel_param = DUEL_MODE_PLAYING;
+					mainGame->forbiddentypes = 0;
+					mainGame->chkRules[13]->setChecked(false);
+					mainGame->ebStartHand->setText(L"5");
+					goto remove;
+				}
 				default: break;
 				remove:
-				combobox->removeItem(8);
+				combobox->removeItem(9);
 				mainGame->UpdateExtraRules();
 				}
 #undef CHECK

@@ -2637,19 +2637,24 @@ void Game::UpdateDuelParam() {
 	case DUEL_MODE_SPEED: {
 		cbDuelRule->setSelected(5);
 		if(flag2 == DUEL_MODE_MR5_FORB)
-			cbDuelRule->removeItem(8);
+			cbDuelRule->removeItem(9);
 		break;
 	}
 	case DUEL_MODE_RUSH: {
 		cbDuelRule->setSelected(6);
 		if(flag2 == DUEL_MODE_MR5_FORB)
-			cbDuelRule->removeItem(8);
+			cbDuelRule->removeItem(9);
 		break;
 	}
 	case DUEL_MODE_GOAT: {
 		cbDuelRule->setSelected(7);
 		if(flag2 == DUEL_MODE_MR1_FORB)
-			cbDuelRule->removeItem(8);
+			cbDuelRule->removeItem(9);
+		break;
+	}
+	case DUEL_MODE_PLAYING: {
+		cbDuelRule->setSelected(8);
+		cbDuelRule->removeItem(9);
 		break;
 	}
 	default:
@@ -2664,7 +2669,7 @@ void Game::UpdateDuelParam() {
 	#undef CHECK
 		default: {
 			cbDuelRule->addItem(gDataManager->GetSysString(1630).data());
-			cbDuelRule->setSelected(8);
+			cbDuelRule->setSelected(9);
 			break;
 		}
 		}
@@ -2948,6 +2953,7 @@ void Game::ReloadCBDuelRule(irr::gui::IGUIComboBox* cb) {
 	cb->addItem(gDataManager->GetSysString(1264).data());
 	cb->addItem(gDataManager->GetSysString(1258).data());
 	cb->addItem(gDataManager->GetSysString(1259).data());
+	cb->addItem(gDataManager->GetSysString(1248).data());
 	cb->addItem(gDataManager->GetSysString(1248).data());
 }
 void Game::ReloadCBRule() {
