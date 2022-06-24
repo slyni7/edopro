@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <ifaddrs.h>
 #include <net/if.h>
+#include <sys/wait.h>
 #endif
 #endif
 #include "game_config.h"
@@ -163,6 +164,7 @@ void DuelClient::StopClient(bool is_exiting) {
 #if !defined(_WIN32) && !defined(__ANDROID__)
 		for(auto& pid : mainGame->gBot.windbotsPids) {
 			kill(pid, SIGKILL);
+			(void)waitpid(pid, nullptr, 0);
 		}
 		mainGame->gBot.windbotsPids.clear();
 #endif
@@ -542,6 +544,14 @@ void DuelClient::HandleSTOCPacketLanAsync(const std::vector<uint8_t>& data) {
 				text = gDataManager->GetSysString(1425).data();
 				break;
 			}
+			case DeckError::TOOMANYLEGENDS: {
+				text = gDataManager->GetSysString(1426).data();
+				break;
+			}
+			case DeckError::TOOMANYSKILLS: {
+				text = gDataManager->GetSysString(1427).data();
+				break;
+			}
 			default: {
 				text = gDataManager->GetSysString(1406).data();
 				break;
@@ -667,7 +677,7 @@ void DuelClient::HandleSTOCPacketLanAsync(const std::vector<uint8_t>& data) {
 		mainGame->deckBuilder.hovered_code = 0;
 		mainGame->deckBuilder.is_draging = false;
 		gdeckManager->pre_deck = gdeckManager->sent_deck;
-		gdeckManager->current_deck = gdeckManager->sent_deck;
+		mainGame->deckBuilder.SetCurrentDeck(gdeckManager->sent_deck);
 		mainGame->device->setEventReceiver(&mainGame->deckBuilder);
 		mainGame->dInfo.isFirst = (mainGame->dInfo.player_type < mainGame->dInfo.team1) || (mainGame->dInfo.player_type >=7);
 		mainGame->dInfo.isTeam1 = mainGame->dInfo.isFirst;
@@ -4108,8 +4118,8 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		}
 		mainGame->dInfo.startlp = std::max(mainGame->dInfo.lp[0], mainGame->dInfo.lp[1]);
 		mainGame->dField.RefreshAllCards();
-		val = CompatRead<uint8_t, uint32_t>(pbuf); //chains, always 0 in single mode
-		if(!mainGame->dInfo.isSingleMode) {
+		val = CompatRead<uint8_t, uint32_t>(pbuf); //number of chains
+		if(val > 0) {
 			for(uint32_t i = 0; i < val; ++i) {
 				uint32_t code = BufferIO::Read<uint32_t>(pbuf);
 				CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, mainGame->dInfo.compat_mode);
@@ -4143,10 +4153,8 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 					mainGame->dField.current_chain.chain_pos.Y += chc * 0.25f;
 				mainGame->dField.chains.push_back(mainGame->dField.current_chain);
 			}
-			if(val) {
-				event_string = fmt::sprintf(gDataManager->GetSysString(1609), gDataManager->GetName(mainGame->dField.current_chain.code));
-				mainGame->dField.last_chain = true;
-			}
+			event_string = fmt::sprintf(gDataManager->GetSysString(1609), gDataManager->GetName(mainGame->dField.current_chain.code));
+			mainGame->dField.last_chain = true;
 		}
 		break;
 	}
