@@ -577,10 +577,7 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 	cur_player[1] = players.opposing_iterator->player;
 	dp->state = CTOS_RESPONSE;
 	const auto seed = Utils::GetRandomNumberGeneratorSeed();
-	ReplayHeader rh;
-	rh.id = REPLAY_YRP1;
-	rh.version = CLIENT_VERSION;
-	rh.flag = REPLAY_LUA64 | REPLAY_NEWREPLAY | REPLAY_64BIT_DUELFLAG | REPLAY_DIRECT_SEED;
+	auto replay_header = ExtendedReplayHeader::CreateDefaultHeader(REPLAY_YRP1, static_cast<uint32_t>(time(nullptr)));
 	char fconf[40];
 	sprintf_s(fconf, "./playerop.conf");
 	FILE *fpconf = NULL;
@@ -600,16 +597,22 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 		fopen_s(&fp, fc, "r");
 		char line[400];
 		fgets(line, 400, fp);
-		int seedvalue;
 		char curr[25];
-		sscanf(line, "%s : %d", curr, &seedvalue);
-		rh.seed = seedvalue;
+		RNG::Xoshiro256StarStar::StateType seedvalue;
+		uint64_t seed1;
+		uint64_t seed2;
+		uint64_t seed3;
+		uint64_t seed4;
+		sscanf(line, "%s : %lld,%lld,%lld,%lld", curr, &seed1, &seed2, &seed3, &seed4);
+		seedvalue[0] = seed1;
+		seedvalue[1] = seed2;
+		seedvalue[2] = seed3;
+		seedvalue[3] = seed4;
+		replay_header.SetSeed(seedvalue);
 		fclose(fp);
 	}
 	else
-		rh.seed = seed;
-	auto replay_header = ExtendedReplayHeader::CreateDefaultHeader(REPLAY_YRP1, static_cast<uint32_t>(time(nullptr)));
-	replay_header.SetSeed(seed);
+		replay_header.SetSeed(seed);
 	last_replay.BeginRecord(true, EPRO_TEXT("./replay/_LastReplay.yrp"));
 	last_replay.WriteHeader(replay_header);
 	//records the replay with the new system
