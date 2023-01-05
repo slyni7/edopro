@@ -766,6 +766,12 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 				OCG_DuelNewCard(pduel, card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.extra[i]->code, false);
 			}
+			/*test*/
+			card_info.loc = 0x80000000;
+			for (int32_t i = (int32_t)dueler.pdeck.side.size() - 1; i >= 0; --i) {
+				card_info.code = dueler.pdeck.side[i]->code;
+				OCG_DuelNewCard(pduel, card_info);
+			}
 		}
 		card_info.team = 1;
 		card_info.con = 1;
@@ -790,6 +796,12 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 				card_info.code = dueler.pdeck.extra[i]->code;
 				OCG_DuelNewCard(pduel, card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.extra[i]->code, false);
+			}
+			/*test*/
+			card_info.loc = 0x80000000;
+			for (int32_t i = (int32_t)dueler.pdeck.side.size() - 1; i >= 0; --i) {
+				card_info.code = dueler.pdeck.side[i]->code;
+				OCG_DuelNewCard(pduel, card_info);
 			}
 		}
 	}
