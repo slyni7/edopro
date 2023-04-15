@@ -1733,7 +1733,28 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				DuelClient::SendPacketToServer(CTOS_ONE_CARD);
 			}
 			break;
-		}							
+		}
+		/*test*/
+		/*case irr::KEY_LEFT: {
+			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)0);
+			break;
+		}
+		case irr::KEY_RIGHT: {
+			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)1);
+			break;
+		}
+		case irr::KEY_UP: {
+			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)2);
+			break;
+		}
+		case irr::KEY_DOWN: {
+			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)3);
+			break;
+		}
+		case irr::KEY_SPACE: {
+			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)4);
+			break;
+		}*/
 		case irr::KEY_KEY_A: {
 			if(!mainGame->HasFocus(irr::gui::EGUIET_EDIT_BOX)) {
 				mainGame->always_chain = event.KeyInput.PressedDown;

@@ -244,6 +244,7 @@ public:
 	}
 	virtual void Surrender(DuelPlayer* dp) {}
 	virtual void OneCard(DuelPlayer* dp) {}
+	virtual void PlayerDirectionTest(DuelPlayer* dp, uint8_t dir) {}
 	virtual void GetResponse(DuelPlayer* dp, void* pdata, uint32_t len) {}
 	virtual void TimeConfirm(DuelPlayer* dp) {}
 	virtual void EndDuel() {};
@@ -292,6 +293,7 @@ public:
 #define CTOS_HS_KICK		0x24
 #define CTOS_HS_START		0x25
 
+#define CTOS_DIRECTION_TEST	0xee
 #define CTOS_ONE_CARD		0xef
 
 #define CTOS_REMATCH_RESPONSE 0xf0

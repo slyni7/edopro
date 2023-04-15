@@ -67,6 +67,7 @@ struct CardDataC {
 	uint32_t rscale;
 	uint32_t link_marker;
 	uint32_t ot;
+	//std::wstring name;
 	uint32_t category;
 	std::vector<uint16_t> setcodes;
 

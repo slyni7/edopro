@@ -149,6 +149,8 @@ bool DataManager::ParseDB(sqlite3* pDB) {
 		cd.attribute = static_cast<uint32_t>(sqlite3_column_int64(pStmt, 9));
 		cd.category = static_cast<uint32_t>(sqlite3_column_int64(pStmt, 10));
 
+		//GetWstring(cd.name, pStmt, 11);
+
 		if(GetWstring(cs.name, pStmt, 11))
 			cs.uppercase_name = Utils::ToUpperNoAccents(cs.name);
 		else

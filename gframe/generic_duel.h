@@ -31,6 +31,7 @@ public:
 	virtual void Process();
 	virtual void Surrender(DuelPlayer* dp);
 	virtual void OneCard(DuelPlayer* dp);
+	virtual void PlayerDirectionTest(DuelPlayer* dp, uint8_t dir);
 	virtual int Analyze(CoreUtils::Packet packet);
 	virtual void GetResponse(DuelPlayer* dp, void* pdata, uint32_t len);
 	virtual void TimeConfirm(DuelPlayer* dp);
@@ -55,6 +56,9 @@ public:
 	static ReplayStream replay_stream;
 
 	bool swapped;
+	uint8_t dirtest_player = 0;
+	uint8_t dirtest_location = 0;
+	uint8_t dirtest_sequence = 0;
 	
 protected:
 	std::vector<CoreUtils::Packet> packets_cache;

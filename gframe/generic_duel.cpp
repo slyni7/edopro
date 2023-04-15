@@ -3,6 +3,8 @@
 #include "game.h"
 #include "core_utils.h"
 
+#include "client_card.h"
+
 namespace ygo {
 
 ReplayStream GenericDuel::replay_stream;
@@ -910,8 +912,176 @@ void GenericDuel::Surrender(DuelPlayer* dp) {
 }
 void GenericDuel::OneCard(DuelPlayer* dp) {
 	uint8_t player = dp->type < players.home_size ? 0 : 1;
+	/*	std::vector<uint8_t> buffer;
+	BufferIO::insert_value<uint8_t>(buffer, MSG_DAMAGE);
+	BufferIO::insert_value<uint8_t>(buffer, 1 - player);
+	BufferIO::insert_value<uint32_t>(buffer, 100);
+	NetServer::SendBufferToPlayer(nullptr, STOC_GAME_MSG, buffer);
+	ResendToAll();*/
 	if (player < 2 && pduel)
 		OCG_OneCard(pduel, player);
+}
+void GenericDuel::PlayerDirectionTest(DuelPlayer* dp, uint8_t dir) {
+	if (dir == 4) {
+		if (dirtest_location) {
+			ClientCard* olcard = mainGame->dField.GetCard(dirtest_player, dirtest_location, dirtest_sequence);
+			if (olcard && olcard->code == 37961969) {
+				std::vector<uint8_t> buffer;
+				BufferIO::insert_value<uint8_t>(buffer, MSG_MOVE);
+				BufferIO::insert_value<uint32_t>(buffer, 30243636);
+				BufferIO::insert_value<uint8_t>(buffer, 0);
+				BufferIO::insert_value<uint8_t>(buffer, 0);
+				BufferIO::insert_value<uint32_t>(buffer, 0);
+				BufferIO::insert_value<uint32_t>(buffer, 0);
+				BufferIO::insert_value<uint8_t>(buffer, dirtest_player);
+				BufferIO::insert_value<uint8_t>(buffer, dirtest_location);
+				BufferIO::insert_value<uint32_t>(buffer, dirtest_sequence);
+				BufferIO::insert_value<uint32_t>(buffer, POS_FACEUP_ATTACK);
+				BufferIO::insert_value<uint32_t>(buffer, 0);
+				NetServer::SendBufferToPlayer(nullptr, STOC_GAME_MSG, buffer);
+				ResendToAll();
+			}
+			return;
+		}
+	}
+	if (clock() < mainGame->dir_test + 240)
+		return;
+	mainGame->dir_test = clock();
+	bool bchk = FALSE;
+	int bp = dirtest_player;
+	int bl = dirtest_location;
+	int bs = dirtest_sequence;
+	if (bl) {
+		ClientCard* olcard = mainGame->dField.GetCard(dirtest_player, dirtest_location, dirtest_sequence);
+		if (olcard && olcard->code == 30243636) {
+			bchk = TRUE;
+		}
+	}
+	uint8_t player = dp->type < players.home_size ? 0 : 1;
+	/*std::vector<uint8_t> buffer;
+	BufferIO::insert_value<uint8_t>(buffer, MSG_RECOVER);
+	BufferIO::insert_value<uint8_t>(buffer, player);
+	BufferIO::insert_value<uint32_t>(buffer, dir + 100);
+	NetServer::SendBufferToPlayer(nullptr, STOC_GAME_MSG, buffer);
+	ResendToAll();*/
+	std::vector<uint8_t> buffer;
+	BufferIO::insert_value<uint8_t>(buffer, MSG_MOVE);
+	BufferIO::insert_value<uint32_t>(buffer, 37961969);
+	BufferIO::insert_value<uint8_t>(buffer, dirtest_player);
+	BufferIO::insert_value<uint8_t>(buffer, dirtest_location);
+	BufferIO::insert_value<uint32_t>(buffer, dirtest_sequence);
+	BufferIO::insert_value<uint32_t>(buffer, POS_FACEUP_ATTACK);
+	if (!dirtest_location) {
+		dirtest_location = LOCATION_MZONE;
+		dirtest_sequence = 2;
+	}
+	else {
+		int rdir = dir;
+		if (player) {
+			if (rdir >= 2)
+				rdir = 5 - rdir;
+			else
+				rdir = 1 - rdir;
+		}
+		switch (rdir) {
+		case 0:
+			if (!dirtest_player) {
+				if ((dirtest_sequence > 0) && (dirtest_sequence <= 4))
+					dirtest_sequence--;
+			}
+			else {
+				if (dirtest_sequence < 4)
+					dirtest_sequence++;
+			}
+			break;
+		case 1:
+			if (!dirtest_player) {
+				if (dirtest_sequence < 4)
+					dirtest_sequence++;
+			}
+			else {
+				if ((dirtest_sequence > 0) && (dirtest_sequence <= 4))
+					dirtest_sequence--;
+			}
+			break;
+		case 2:
+			if (!dirtest_player) {
+				if (dirtest_location == LOCATION_MZONE) {
+					if ((dirtest_sequence == 1) || (dirtest_sequence == 3)) {
+						dirtest_sequence = (9 + dirtest_sequence) >> 1;
+					}
+					else if (dirtest_sequence > 4) {
+						dirtest_player = 1;
+						dirtest_sequence = 13 - (dirtest_sequence << 1);
+					}
+				}
+				else {
+					dirtest_location = LOCATION_MZONE;
+				}
+			}
+			else {
+				if (dirtest_location == LOCATION_MZONE) {
+					if (dirtest_sequence > 4) {
+						dirtest_sequence = (dirtest_sequence << 1) - 9;
+					}
+					else {
+						dirtest_location = LOCATION_SZONE;
+					}
+				}
+			}
+			break;
+		case 3:
+			if (!dirtest_player) {
+				if (dirtest_location == LOCATION_MZONE) {
+					if (dirtest_sequence > 4) {
+						dirtest_sequence = (dirtest_sequence << 1) - 9;
+					}
+					else {
+						dirtest_location = LOCATION_SZONE;
+					}
+				}
+			}
+			else {
+				if (dirtest_location == LOCATION_MZONE) {
+					if ((dirtest_sequence == 1) || (dirtest_sequence == 3)) {
+						dirtest_sequence = (9 + dirtest_sequence) >> 1;
+					}
+					else if (dirtest_sequence > 4) {
+						dirtest_player = 0;
+						dirtest_sequence = 13 - (dirtest_sequence << 1);
+					}
+				}
+				else {
+					dirtest_location = LOCATION_MZONE;
+				}
+			}
+			break;
+		default: break;
+		}
+	}
+	BufferIO::insert_value<uint8_t>(buffer, dirtest_player);
+	BufferIO::insert_value<uint8_t>(buffer, dirtest_location);
+	BufferIO::insert_value<uint32_t>(buffer, dirtest_sequence);
+	BufferIO::insert_value<uint32_t>(buffer, POS_FACEUP_ATTACK);
+	BufferIO::insert_value<uint32_t>(buffer, 0);
+	NetServer::SendBufferToPlayer(nullptr, STOC_GAME_MSG, buffer);
+	ResendToAll();
+	if (bchk) {
+		std::vector<uint8_t> buffer2;
+		BufferIO::insert_value<uint8_t>(buffer2, MSG_MOVE);
+		BufferIO::insert_value<uint32_t>(buffer2, 30243636);
+		BufferIO::insert_value<uint8_t>(buffer2, 0);
+		BufferIO::insert_value<uint8_t>(buffer2, 0);
+		BufferIO::insert_value<uint32_t>(buffer2, 0);
+		BufferIO::insert_value<uint32_t>(buffer2, 0);
+		BufferIO::insert_value<uint8_t>(buffer2, bp);
+		BufferIO::insert_value<uint8_t>(buffer2, bl);
+		BufferIO::insert_value<uint32_t>(buffer2, bs);
+		BufferIO::insert_value<uint32_t>(buffer2, POS_FACEUP_ATTACK);
+		BufferIO::insert_value<uint32_t>(buffer2, 0);
+		NetServer::SendBufferToPlayer(nullptr, STOC_GAME_MSG, buffer2);
+		ResendToAll();
+	}
 }
 #define SEND(to) NetServer::SendCoreUtilsPacketToPlayer(to, STOC_GAME_MSG, packet)
 void GenericDuel::BeforeParsing(const CoreUtils::Packet& packet, int& return_value, bool& record, bool& record_last) {
@@ -998,6 +1168,27 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 				NetServer::ReSendToPlayer(dueler);
 		}
 		}
+		break;
+	}
+	case MSG_UPDATE_CARD: {
+		uint8_t pcon = BufferIO::Read<uint8_t>(pbuf);
+		uint8_t ploc = BufferIO::Read<uint8_t>(pbuf);
+		BufferIO::Read<uint8_t>(pbuf);
+		BufferIO::Read<uint16_t>(pbuf);
+		uint32_t pque = BufferIO::Read<uint32_t>(pbuf);
+		SEND(nullptr);
+		for (auto& dueler : (pcon == 0) ? players.home : players.opposing)
+			NetServer::ReSendToPlayer(dueler);
+		if ((ploc == LOCATION_HAND) && (pque == QUERY_CODE)) {
+			pbufw = pbuf;
+			BufferIO::Write<uint32_t>(pbufw, 0);
+		}
+		SEND(nullptr);
+		for (auto& dueler : (pcon == 1) ? players.home : players.opposing)
+			NetServer::ReSendToPlayer(dueler);
+		for (auto& obs : observers)
+			NetServer::ReSendToPlayer(obs);
+		packets_cache.push_back(packet);
 		break;
 	}
 	case MSG_SELECT_BATTLECMD:

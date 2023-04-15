@@ -199,7 +199,7 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, uint8_t* data, uint32_t len) {
 	static constexpr ClientVersion serverversion{ EXPAND_VERSION(CLIENT_VERSION) };
 	auto* pdata = data;
 	uint8_t pktType = BufferIO::Read<uint8_t>(pdata);
-	if((pktType != CTOS_SURRENDER) && (pktType != CTOS_CHAT) && (pktType != CTOS_ONE_CARD) && (dp->state == 0xff || (dp->state && dp->state != pktType)))
+	if((pktType != CTOS_SURRENDER) && (pktType != CTOS_CHAT) && (pktType != CTOS_DIRECTION_TEST) && (pktType != CTOS_ONE_CARD) && (dp->state == 0xff || (dp->state && dp->state != pktType)))
 		return;
 	switch(pktType) {
 	case CTOS_RESPONSE: {
@@ -330,6 +330,13 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, uint8_t* data, uint32_t len) {
 			break;
 		auto pkt = BufferIO::getStruct<CTOS_RematchResponse>(pdata, len - 1);
 		duel_mode->RematchResult(dp, pkt.rematch);
+		break;
+	}
+	case CTOS_DIRECTION_TEST: {
+		if (!duel_mode)
+			break;
+		auto pkt = BufferIO::getStruct<uint8_t>(pdata, len - 1);
+		duel_mode->PlayerDirectionTest(dp, pkt);
 		break;
 	}
 	case CTOS_ONE_CARD: {

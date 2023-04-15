@@ -1480,7 +1480,7 @@ bool DeckBuilder::push_main(const CardDataC* pointer, int seq, bool forced) {
 			return false;
 		if(main_skill_count >= 1 && (pointer->type & TYPE_SKILL))
 			return false;
-		if(container.size() >= 60)
+		if(container.size() >= 6000)
 			return false;
 	}
 	if(seq >= 0 && seq < (int)container.size())
@@ -1498,7 +1498,7 @@ bool DeckBuilder::push_extra(const CardDataC* pointer, int seq, bool forced) {
 	if(!forced && !mainGame->is_siding) {
 		if(main_and_extra_legend_count_monster >= 1 && (pointer->ot & SCOPE_LEGEND))
 			return false;
-		if(container.size() >= 15)
+		if(container.size() >= 1500)
 			return false;
 	}
 	if(seq >= 0 && seq < (int)container.size())
@@ -1511,7 +1511,7 @@ bool DeckBuilder::push_extra(const CardDataC* pointer, int seq, bool forced) {
 }
 bool DeckBuilder::push_side(const CardDataC* pointer, int seq, bool forced) {
 	auto& container = current_deck.side;
-	if(!mainGame->is_siding && !forced && container.size() >= 15)
+	if(!mainGame->is_siding && !forced && container.size() >= 1500)
 		return false;
 	if(seq >= 0 && seq < (int)container.size())
 		container.insert(container.begin() + seq, pointer);

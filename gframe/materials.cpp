@@ -319,7 +319,8 @@ Materials::Materials() {
 	mCard.AmbientColor = 0xffffffff;
 	mCard.DiffuseColor = 0xff000000;
 	mCard.ColorMaterial = irr::video::ECM_NONE;
-	mCard.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	//mCard.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mCard.MaterialType = irr::video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	mCard.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
 	ENABLE_ZWRITE(mCard);
 	mTexture.AmbientColor = 0xffffffff;
