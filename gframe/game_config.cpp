@@ -3,6 +3,7 @@
 #include "game_config.h"
 #include <fmt/format.h>
 #include "bufferio.h"
+#include "porting.h"
 #include "utils.h"
 #include "config.h"
 #include "logging.h"
@@ -11,6 +12,9 @@
 namespace ygo {
 
 GameConfig::GameConfig() {
+#ifdef __ANDROID__
+	Load(epro::format("{}/system.conf", porting::internal_storage));
+#endif
 	Load(EPRO_TEXT("./config/system.conf"));
 	if(configs.empty()) {
 		{
@@ -101,7 +105,7 @@ ygo::GameConfig::TextFont parseOption<ygo::GameConfig::TextFont>(std::string& va
 		return ret;
 	}
 	ret.font = Utils::ToPathString(value.substr(0, pos));
-	ret.size = std::stoi(value.substr(pos));
+	ret.size = static_cast<uint8_t>(std::stoi(value.substr(pos)));
 	return ret;
 }
 

@@ -23,6 +23,10 @@ local ygopro_config=function(static_core)
 			}
 		filter {}
 	end
+	
+	filter { "action:not vs*" }
+		enablewarnings "pedantic"
+	filter {}
 
 	filter {'files:**.rc', 'action:not vs*'}
 		buildmessage '%{file.relpath}'
@@ -31,6 +35,13 @@ local ygopro_config=function(static_core)
 			'windres -DMINGW "%{file.relpath}" -o "%{cfg.objdir}/%{file.basename}_rc.o"'
 		}
 	filter {}
+
+	if static_core then
+		if _OPTIONS["lua-path"] then
+			includedirs{ _OPTIONS["lua-path"] .. "/include" }
+			libdirs{ _OPTIONS["lua-path"] .. "/lib" }
+		end
+	end
 
 	defines "CURL_STATICLIB"
 	if _OPTIONS["pics"] then
@@ -125,7 +136,6 @@ local ygopro_config=function(static_core)
 		defines "IRR_COMPILE_WITH_DX9_DEV_PACK"
 
 	filter "system:not windows"
-		defines "LUA_COMPAT_5_2"
 		if _OPTIONS["discord"] then
 			links "discord-rpc"
 		end
@@ -138,7 +148,6 @@ local ygopro_config=function(static_core)
 		links { "sqlite3", "event", "git2", "ssh2" }
 
 	filter "system:macosx or ios"
-		defines "LUA_USE_MACOSX"
 		links { "ssl", "crypto" }
 		if os.istarget("macosx") then
 			files { "*.m", "*.mm" }
@@ -177,9 +186,8 @@ local ygopro_config=function(static_core)
 		links { "fmt", "curl", "freetype" }
 
 	filter "system:linux"
-		defines "LUA_USE_LINUX"
 		if static_core then
-			links  "lua:static"
+			links  "lua"
 		end
 		if _OPTIONS["vcpkg-root"] then
 			links { "ssl", "crypto", "z", "jpeg" }

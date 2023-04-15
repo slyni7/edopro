@@ -93,7 +93,6 @@ void NameThread(const char* name, const wchar_t* wname) {
 #endif //_MSC_VER
 }
 
-
 //Dump creation routines taken from Postgres
 //https://github.com/postgres/postgres/blob/27b77ecf9f4d5be211900eda54d8155ada50d696/src/backend/port/win32/crashdump.c
 LONG WINAPI crashDumpHandler(EXCEPTION_POINTERS* pExceptionInfo) {
@@ -111,10 +110,7 @@ LONG WINAPI crashDumpHandler(EXCEPTION_POINTERS* pExceptionInfo) {
 	HANDLE selfProcHandle = GetCurrentProcess();
 	DWORD selfPid = GetCurrentProcessId();
 
-	MINIDUMP_EXCEPTION_INFORMATION ExInfo;
-	ExInfo.ThreadId = GetCurrentThreadId();
-	ExInfo.ExceptionPointers = pExceptionInfo;
-	ExInfo.ClientPointers = FALSE;
+	MINIDUMP_EXCEPTION_INFORMATION ExInfo{ GetCurrentThreadId(), pExceptionInfo, FALSE };
 
 	/* Load the dbghelp.dll library and functions */
 	auto* dbgHelpDLL = LoadLibrary(EPRO_TEXT("dbghelp.dll"));
@@ -123,15 +119,17 @@ LONG WINAPI crashDumpHandler(EXCEPTION_POINTERS* pExceptionInfo) {
 	
 	auto* miniDumpWriteDumpFn = reinterpret_cast<MiniDumpWriteDump_t>(GetProcAddress(dbgHelpDLL, "MiniDumpWriteDump"));
 
-	if(miniDumpWriteDumpFn == nullptr)
+	if(miniDumpWriteDumpFn == nullptr) {
+		FreeLibrary(dbgHelpDLL);
 		return EXCEPTION_CONTINUE_SEARCH;
+	}
 
 	/*
-     * Dump as much as we can, except shared memory, code segments, and
-     * memory mapped files. Exactly what we can dump depends on the
-     * version of dbghelp.dll, see:
-     * http://msdn.microsoft.com/en-us/library/ms680519(v=VS.85).aspx
-    */
+	* Dump as much as we can, except shared memory, code segments, and
+	* memory mapped files. Exactly what we can dump depends on the
+	* version of dbghelp.dll, see:
+	* http://msdn.microsoft.com/en-us/library/ms680519(v=VS.85).aspx
+	*/
 	auto dumpType = static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithHandleData | MiniDumpWithDataSegs);
 
 	if(GetProcAddress(dbgHelpDLL, "EnumDirTree") != nullptr) {
@@ -146,13 +144,16 @@ LONG WINAPI crashDumpHandler(EXCEPTION_POINTERS* pExceptionInfo) {
 							   nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL,
 							   nullptr);
 
-	if(dumpFile == INVALID_HANDLE_VALUE)
+	if(dumpFile == INVALID_HANDLE_VALUE) {
+		FreeLibrary(dbgHelpDLL);
 		return EXCEPTION_CONTINUE_SEARCH;
+	}
 
 	if(miniDumpWriteDumpFn(selfProcHandle, selfPid, dumpFile, dumpType, &ExInfo, nullptr, nullptr))
 		ygo::GUIUtils::ShowErrorWindow("Crash dump", fmt::format("Succesfully wrote crash dump to file \"{}\"\n", ygo::Utils::ToUTF8IfNeeded(dumpPath)));
 
 	CloseHandle(dumpFile);
+	FreeLibrary(dbgHelpDLL);
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }
@@ -264,7 +265,7 @@ namespace ygo {
 			close(input);
 			return false;
 		}
-		auto result = FileCopyFD(output, input);
+		auto result = FileCopyFD(input, output);
 		close(input);
 		close(output);
 		return result;
@@ -477,8 +478,26 @@ namespace ygo {
 		return nullptr;
 	}
 	const std::string& Utils::GetUserAgent() {
+		auto EscapeUTF8 = [](auto& to_escape) {
+			auto IsNonANSI = [](char c) {
+				return (static_cast<unsigned>(c) & ~0x7Fu) != 0;
+			};
+			const epro::stringview view{ to_escape.data(), to_escape.size() };
+			const auto total_unicode = std::count_if(view.begin(), view.end(), IsNonANSI);
+			std::string ret;
+			ret.reserve(view.size() + (total_unicode * 4));
+			for(auto c : view) {
+				if(IsNonANSI(c)) {
+					static constexpr std::array<char, 16> map{ {'0', '1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'} };
+					auto int_char = static_cast<unsigned>(c);
+					ret.append(R"(\x)").append(1, map[(int_char >> 4) & 0xf]).append(1, map[int_char & 0xf]);
+				} else
+					ret.append(1, c);
+			}
+			return ret;
+		};
 		static const std::string agent = epro::format("EDOPro-" OSSTRING "-" STR(EDOPRO_VERSION_MAJOR) "." STR(EDOPRO_VERSION_MINOR) "." STR(EDOPRO_VERSION_PATCH)" {}",
-											   ygo::Utils::OSOperator->getOperatingSystemVersion());
+													  EscapeUTF8(Utils::OSOperator->getOperatingSystemVersion()));
 		return agent;
 	}
 	epro::path_string Utils::GetAbsolutePath(epro::path_stringview path) {
@@ -610,8 +629,6 @@ namespace ygo {
 				int percentage = 0;
 				auto reader = archive->createAndOpenFile(i);
 				if(reader) {
-					FileStream out{ epro::format(EPRO_TEXT("{}/{}"), dest, filename), FileStream::out | FileStream::binary };
-					int r, rx = reader->getSize();
 					if(payload) {
 						payload->is_new = true;
 						payload->cur = i;
@@ -620,8 +637,10 @@ namespace ygo {
 						callback(payload);
 						payload->is_new = false;
 					}
+					FileStream out{ epro::format(EPRO_TEXT("{}/{}"), dest, filename), FileStream::out | FileStream::binary };
+					size_t r, rx = reader->getSize();
 					for(r = 0; r < rx; /**/) {
-						int wx = reader->read(buff, buff_size);
+						int wx = static_cast<int>(reader->read(buff, buff_size));
 						out.write(buff, wx);
 						r += wx;
 						cur_fullsize += wx;
@@ -664,14 +683,21 @@ namespace ygo {
 #else
 #define OPEN "xdg-open"
 #endif
-		auto pid = vfork();
-		if(pid == 0) {
-			execl("/usr/bin/" OPEN, OPEN, arg.data(), nullptr);
-			_exit(EXIT_FAILURE);
-		} else if(pid < 0)
-			perror("Failed to fork:");
-		if(waitpid(pid, nullptr, WNOHANG) != 0)
-			perror("Failed to open arg or file:");
+        const auto* arg_cstr = arg.data();
+        auto pid = vfork();
+        if(pid == 0) {
+            auto grandchild = vfork();
+            if (grandchild == 0) {
+                execl("/usr/bin/" OPEN, OPEN, arg_cstr, nullptr);
+                _exit(EXIT_FAILURE);
+            }
+            _exit(grandchild > 0 ? EXIT_SUCCESS : EXIT_FAILURE);
+        }
+        int status;
+        if(waitpid(pid, &status, 0) != 0) {
+            if(WIFEXITED(status) == 0 || WEXITSTATUS(status) != EXIT_SUCCESS)
+                perror("Failed to fork:");
+        }
 #endif
 	}
 
@@ -692,17 +718,23 @@ namespace ygo {
 		stat(path.data(), &fileStat);
 		chmod(path.data(), fileStat.st_mode | S_IXUSR | S_IXGRP | S_IXOTH);
 #endif
-		auto pid = vfork();
-		if(pid == 0) {
+		{
+			const auto* path_cstr = path.data();
+			const auto& workdir = GetWorkingDirectory();
+			const auto* workdir_cstr = workdir.data();
+			auto pid = vfork();
+			if(pid == 0) {
 #ifdef __linux__
-			execl(path.data(), path.data(), "-C", GetWorkingDirectory().data(), "-l", nullptr);
+				execl(path_cstr, path_cstr, "-C", workdir_cstr, "-l", nullptr);
 #else
-			execlp("open", "open", "-b", "io.github.edo9300.ygoprodll", "--args", "-C", GetWorkingDirectory().data(), "-l", nullptr);
+				(void)path_cstr;
+				execlp("open", "open", "-b", "io.github.edo9300.ygoprodll", "--args", "-C", workdir_cstr, "-l", nullptr);
 #endif
-			_exit(EXIT_FAILURE);
+				_exit(EXIT_FAILURE);
+			}
+			if(pid < 0 || waitpid(pid, nullptr, WNOHANG) != 0)
+				return;
 		}
-		if(pid < 0 || waitpid(pid, nullptr, WNOHANG) != 0)
-			return;
 #endif
 		exit(0);
 #endif

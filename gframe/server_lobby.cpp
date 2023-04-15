@@ -170,7 +170,7 @@ void ServerLobby::GetRoomsThread() {
 	Utils::SetThreadName("RoomlistFetch");
 	auto selected = mainGame->serverChoice->getSelected();
 	if (selected < 0) return;
-	ServerInfo serverInfo = serversVector[selected];
+	const auto& serverInfo = serversVector[selected];
 
 	mainGame->btnLanRefresh2->setEnabled(false);
 	mainGame->serverChoice->setEnabled(false);
@@ -181,11 +181,7 @@ void ServerLobby::GetRoomsThread() {
 	CURL* curl_handle = curl_easy_init();
 	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, curl_error_buffer);
 	curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1);
-	//if(mainGame->chkShowActiveRooms->isChecked()) {
-		curl_easy_setopt(curl_handle, CURLOPT_URL, epro::format("{}://{}:{}/api/getrooms", ServerInfo::GetProtocolString(serverInfo.protocol), serverInfo.roomaddress, serverInfo.roomlistport).data());
-	/*} else {
-		curl_easy_setopt(curl_handle, CURLOPT_URL, epro::format("http://{}:{}/api/getrooms", serverInfo.roomaddress, serverInfo.roomlistport).data());
-	}*/
+	curl_easy_setopt(curl_handle, CURLOPT_URL, epro::format("{}://{}:{}/api/getrooms", serverInfo.GetProtocolString(), serverInfo.roomaddress, serverInfo.roomlistport).data());
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 60L);
 	curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 15L);
@@ -255,7 +251,7 @@ void ServerLobby::GetRoomsThread() {
 				room.info.sizes.side.max = GET("side_max", uint16_t);
 #undef GET
 				for(auto& obj2 : obj["users"])
-					room.players.push_back(BufferIO::DecodeUTF8(obj2["name"].get_ref<std::string&>()));
+					room.players.push_back(BufferIO::DecodeUTF8(obj2["name"].get_ref<const std::string&>()));
 
 				roomsVector.push_back(std::move(room));
 			}

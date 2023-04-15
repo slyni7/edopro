@@ -38,8 +38,8 @@ static void UpdateDeck() {
 	const auto totsize = deck.main.size() + deck.extra.size() + deck.side.size();
 	if(totsize > max_deck_size)
 		return;
-	BufferIO::Write<uint32_t>(pdeck, deck.main.size() + deck.extra.size());
-	BufferIO::Write<uint32_t>(pdeck, deck.side.size());
+	BufferIO::Write<uint32_t>(pdeck, static_cast<uint32_t>(deck.main.size() + deck.extra.size()));
+	BufferIO::Write<uint32_t>(pdeck, static_cast<uint32_t>(deck.side.size()));
 	for(const auto& pcard : deck.main)
 		BufferIO::Write<uint32_t>(pdeck, pcard->code);
 	for(const auto& pcard : deck.extra)
@@ -267,6 +267,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					}
 					gGameConfig->gamename = mainGame->ebServerName->getText();
 					gGameConfig->serverport = mainGame->ebHostPort->getText();
+					mainGame->gBot.Refresh(gGameConfig->filterBot * (mainGame->cbDuelRule->getSelected() + 1), gGameConfig->lastBot);
 					if(!NetServer::StartServer(host_port))
 						break;
 					if(!DuelClient::StartClient(0x100007F /*127.0.0.1 in network byte order*/, host_port)) {
@@ -276,7 +277,6 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					DuelClient::is_local_host = true;
 					mainGame->btnHostConfirm->setEnabled(false);
 					mainGame->btnHostCancel->setEnabled(false);
-					mainGame->gBot.Refresh(gGameConfig->filterBot * (mainGame->cbDuelRule->getSelected() + 1), gGameConfig->lastBot);
 				}
 				break;
 			}
@@ -307,14 +307,10 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				break;
 			}
 			case BUTTON_HP_KICK: {
-				int id = 0;
-				while(id < 6) {
-					if(mainGame->btnHostPrepKick[id] == caller)
-						break;
-					id++;
-				}
 				CTOS_Kick csk;
-				csk.pos = id;
+				csk.pos = 0;
+				while (csk.pos < 6 && mainGame->btnHostPrepKick[csk.pos] != caller)
+					csk.pos++;
 				DuelClient::SendPacketToServer(CTOS_HS_KICK, csk);
 				break;
 			}
@@ -446,7 +442,19 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					if(mainGame->gBot.LaunchSelected(port, mainGame->dInfo.secret.pass))
 						break;
 				} catch(...) {}
-				mainGame->PopupMessage(L"Failed to launch windbot");
+				mainGame->PopupMessage(gDataManager->GetSysString(12122).data());
+				break;
+			}
+			case BUTTON_BOT_COPY_COMMAND: {
+				try {
+					int port = std::stoi(gGameConfig->serverport);
+					const auto params = mainGame->gBot.GetParameters(port, mainGame->dInfo.secret.pass);
+					if(params.size()) {
+						Utils::OSOperator->copyToClipboard(mainGame->gBot.GetParameters(port, mainGame->dInfo.secret.pass).data());
+						mainGame->stACMessage->setText(gDataManager->GetSysString(12121).data());
+						mainGame->PopupElement(mainGame->wACMessage, 20);
+					}
+				} catch(...) {}
 				break;
 			}
 			case BUTTON_EXPORT_DECK: {
@@ -675,7 +683,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->btnShareReplay->setEnabled(true);
 				std::wstring repinfo;
 				time_t curtime = replay.pheader.base.timestamp;
-				repinfo.append(epro::format(L"{:%Y/%m/%d %H:%M:%S}\n", *std::localtime(&curtime)));
+				repinfo.append(epro::format(L"{:%Y/%m/%d %H:%M:%S}\n", fmt::localtime(curtime)));
 				const auto& names = replay.GetPlayerNames();
 				for(int i = 0; i < replay.GetPlayersCount(0); i++) {
 					repinfo.append(names[i] + L"\n");
@@ -833,11 +841,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		case irr::gui::EGET_EDITBOX_CHANGED: {
 			switch(id) {
 			case EDITBOX_PORT_BOX: {
-				std::wstring text = caller->getText();
+				const wchar_t* text = caller->getText();
 				wchar_t filtered[20];
 				int j = 0;
 				bool changed = false;
-				for(int i = 0; text[i]; i++) {
+				for(int i = 0; text[i] && j < 19; i++) {
 					if(text[i] >= L'0' && text[i]<= L'9') {
 						filtered[j] = text[i];
 						j++;
@@ -845,12 +853,13 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					}
 				}
 				filtered[j] = 0;
-				if(BufferIO::GetVal(filtered) > 65535) {
-					wcscpy(filtered, L"65535");
+				text = filtered;
+				if(BufferIO::GetVal(text) > 65535) {
+					text = L"65535";
 					changed = true;
 				}
 				if(changed)
-					caller->setText(filtered);
+					caller->setText(text);
 				break;
 			}
 			case EDITBOX_TEAM_COUNT: {
@@ -913,7 +922,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					}
 	#undef CHECK
 					mainGame->duel_param |= tcg;
-					for (int i = 0; i < sizeofarr(mainGame->chkCustomRules); ++i) {
+					for (auto i = 0u; i < sizeofarr(mainGame->chkCustomRules); ++i) {
 						bool set = false;
 						if(i == 19)
 							set = mainGame->duel_param & DUEL_USE_TRAPS_IN_NEW_CHAIN;
@@ -930,7 +939,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 							mainGame->chkCustomRules[4]->setEnabled(set);
 					}
 					static constexpr uint32_t limits[]{ TYPE_FUSION, TYPE_SYNCHRO, TYPE_XYZ, TYPE_PENDULUM, TYPE_LINK };
-					for (int i = 0; i < sizeofarr(mainGame->chkTypeLimit); ++i)
+					for (auto i = 0u; i < sizeofarr(mainGame->chkTypeLimit); ++i)
 							mainGame->chkTypeLimit[i]->setChecked(mainGame->forbiddentypes & limits[i]);
 				}
 				break;
@@ -998,7 +1007,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				mainGame->UpdateExtraRules();
 				}
 #undef CHECK
-				for(int i = 0; i < sizeofarr(mainGame->chkCustomRules); ++i) {
+				for(auto i = 0u; i < sizeofarr(mainGame->chkCustomRules); ++i) {
 					bool set = false;
 					if(i == 19)
 						set = mainGame->duel_param & DUEL_USE_TRAPS_IN_NEW_CHAIN;
@@ -1015,7 +1024,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 						mainGame->chkCustomRules[4]->setEnabled(set);
 				}
 				static constexpr uint32_t limits[]{ TYPE_FUSION, TYPE_SYNCHRO, TYPE_XYZ, TYPE_PENDULUM, TYPE_LINK };
-				for(int i = 0; i < sizeofarr(mainGame->chkTypeLimit); ++i)
+				for(auto i = 0u; i < sizeofarr(mainGame->chkTypeLimit); ++i)
 					mainGame->chkTypeLimit[i]->setChecked(mainGame->forbiddentypes & limits[i]);
 				break;
 			}

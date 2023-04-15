@@ -94,7 +94,7 @@ irr::IrrlichtDevice* GUIUtils::CreateDevice(GameConfig* configs) {
 	}
 	// This correspond to the program's class name, used by window managers and
 	// desktop environments to group multiple instances with their desktop file
-	char class_name[] = "EDOPro";
+	char class_name[] = "edopro";
 	params.PrivateData = class_name;
 #endif
 	params.Vsync = configs->vsync;
@@ -129,7 +129,7 @@ irr::IrrlichtDevice* GUIUtils::CreateDevice(GameConfig* configs) {
 	// The Android assets file-system does not know which sub-directories it has (blame google).
 	// So we have to add all sub-directories in assets manually. Otherwise we could still open the files,
 	// but existFile checks will fail (which are for example needed by getFont).
-	for(int i = 0; i < filesystem->getFileArchiveCount(); ++i) {
+	for(irr::u32 i = 0; i < filesystem->getFileArchiveCount(); ++i) {
 		auto archive = filesystem->getFileArchive(i);
 		if(archive->getType() == irr::io::EFAT_ANDROID_ASSET) {
 			archive->addDirectoryToFileList("media/");
@@ -188,7 +188,7 @@ bool GUIUtils::TakeScreenshot(irr::IrrlichtDevice* device) {
 	if(!image)
 		return false;
 	const auto now = std::time(nullptr);
-	const auto filename = epro::format(EPRO_TEXT("screenshots/EDOPro {:%Y-%m-%d %H-%M-%S}.png"), *std::localtime(&now));
+	const auto filename = epro::format(EPRO_TEXT("screenshots/EDOPro {:%Y-%m-%d %H-%M-%S}.png"), fmt::localtime(now));
 	auto written = driver->writeImageToFile(image, { filename.data(), static_cast<irr::u32>(filename.size()) });
 	if(!written)
 		device->getLogger()->log(L"Failed to take screenshot.", irr::ELL_WARNING);
@@ -359,10 +359,12 @@ void GUIUtils::ShowErrorWindow(epro::stringview context, epro::stringview messag
 #elif defined(__ANDROID__) || defined(EDOPRO_IOS)
 	porting::showErrorDialog(context, message);
 #elif defined(__linux__)
+	const auto* context_cstr = context.data();
+	const auto* message_cstr = message.data();
 	auto pid = vfork();
 	if(pid == 0) {
-		execl("/usr/bin/kdialog", "kdialog", "--title", context.data(), "--error", message.data());
-		execl("/usr/bin/zenity", "zenity", "--title", context.data(), "--error", message.data());
+		execl("/usr/bin/kdialog", "kdialog", "--title", context_cstr, "--error", message_cstr);
+		execl("/usr/bin/zenity", "zenity", "--title", context_cstr, "--error", message_cstr);
 		_exit(EXIT_FAILURE);
 	} else if(pid > 0)
 		(void)waitpid(pid, nullptr, 0);
