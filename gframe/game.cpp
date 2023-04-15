@@ -3090,7 +3090,6 @@ void Game::UpdateDuelParam() {
 		cbDuelRule->removeItem(9);
 		break;
 	}
-	}/*fallthrough*/
 	default:
 		switch(flag & ~DUEL_TCG_SEGOC_NONPUBLIC) {
 #ifdef __GNUC__

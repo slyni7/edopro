@@ -55,7 +55,7 @@ public:
 	void PseudoRefreshDeck(uint8_t player, uint32_t flag = 0x1181fff);
 	static ReplayStream replay_stream;
 
-	bool swapped;
+	//bool swapped;
 	uint8_t dirtest_player = 0;
 	uint8_t dirtest_location = 0;
 	uint8_t dirtest_sequence = 0;
