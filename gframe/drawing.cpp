@@ -630,6 +630,13 @@ void Game::DrawMisc() {
 			if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP)))
 				DrawStatus(pcard);
 		}
+		/*rikka cross test*/
+		for (size_t i = 0; i < 5; ++i) {
+			pcard = dField.szone[p][i];
+			if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP))
+				&& ((pcard->position == POS_FACEUP_ATTACK) || (pcard->position == POS_FACEUP_DEFENSE)))
+				DrawStatus(pcard);
+		}
 		// Draw pendulum scales
 		for (const auto pzone : pzones) {
 			pcard = dField.szone[p][pzone];
