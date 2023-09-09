@@ -376,6 +376,9 @@ void Game::DrawCard(ClientCard* pcard) {
 		matManager.mCard.setTexture(0, imageManager.GetTextureCard(pcard->code, imgType::ART));
 		driver->setMaterial(matManager.mCard);
 		driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);
+		/*matManager.mCard.setTexture(0, imageManager.GetTextureCard(46448937, imgType::ART));
+		driver->setMaterial(matManager.mCard);
+		driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);*/
 	}
 	if(m22 < 0.99 || pcard->is_moving) {
 		auto txt = imageManager.GetTextureCard(pcard->cover, imgType::COVER);
