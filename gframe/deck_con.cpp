@@ -598,7 +598,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					}
 				}
 				StartFilter(true);
-				break; 
+				break;
 			}
 			case COMBOBOX_SORTTYPE: {
 				SortList();
@@ -828,7 +828,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 		}
 		break;
 	}
-#if !defined(__ANDROID__) && !defined(EDOPRO_IOS)
+#if !EDOPRO_ANDROID && !EDOPRO_IOS
 	case irr::EET_DROP_EVENT: {
 		static std::wstring to_open_file;
 		switch(event.DropEvent.DropType) {
@@ -866,7 +866,8 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 							pos++;
 						to.erase(pos);
 					}
-					uint32_t code = BufferIO::GetVal(to.data());
+					auto* chbuff = to.data();
+					uint32_t code = BufferIO::GetVal(*chbuff == L'C' ? chbuff + 1 : chbuff);
 					const CardDataC* pointer = nullptr;
 					if(!code || !(pointer = gDataManager->GetCardData(code))) {
 						for(auto& card : gDataManager->cards) {
@@ -896,7 +897,7 @@ bool DeckBuilder::OnEvent(const irr::SEvent& event) {
 					mainGame->ShowCardInfo(firstcode);
 				return true;
 			}
-			case irr::DROP_END:	{
+			case irr::DROP_END: {
 				if(to_open_file.size()) {
 					auto extension = Utils::GetFileExtension(to_open_file);
 					if(!mainGame->is_siding && extension == L"ydk" && mainGame->deckBuilder.SetCurrentDeckFromFile(Utils::ToPathString(to_open_file), true)) {
@@ -926,74 +927,97 @@ void DeckBuilder::GetHoveredCard() {
 	auto relative_mouse_pos = mainGame->Resize(mouse_pos.X, mouse_pos.Y, true);
 	auto x = relative_mouse_pos.X;
 	auto y = relative_mouse_pos.Y;
+	const irr::core::recti searchResultRect{ 810, 165, 995, 626 };
 	auto pre_code = hovered_code;
+	hovered_seq = -1;
 	hovered_pos = 0;
 	hovered_code = 0;
 	is_lastcard = 0;
-	if(x >= 314 && x <= 794) {
-		if(y >= 164 && y <= 435) {
-			int lx = 10, px, py = (y - 164) / 68;
-			hovered_pos = 1;
-			if(current_deck.main.size() > 40)
-				lx = static_cast<int>(current_deck.main.size() - 41) / 4 + 11;
-			if(x >= 750)
-				px = lx - 1;
-			else
-				px = (x - 314) * (lx - 1) / 436;
-			hovered_seq = py * lx + px;
-			if(hovered_seq >= (int)current_deck.main.size()) {
-				hovered_seq = -1;
-				hovered_code = 0;
-			} else {
-				hovered_code = current_deck.main[hovered_seq]->code;
-			}
-		} else if(y >= 466 && y <= 530) {
-			int lx = static_cast<int>(current_deck.extra.size());
-			hovered_pos = 2;
-			if(lx < 10)
-				lx = 10;
-			if(x >= 750)
-				hovered_seq = lx - 1;
-			else
-				hovered_seq = (x - 314) * (lx - 1) / 436;
-			if(hovered_seq >= static_cast<int>(current_deck.extra.size())) {
-				hovered_seq = -1;
-				hovered_code = 0;
-			} else {
-				hovered_code = current_deck.extra[hovered_seq]->code;
-				if(x >= 772)
-					is_lastcard = 1;
-			}
-		} else if (y >= 564 && y <= 628) {
-			int lx = static_cast<int>(current_deck.side.size());
-			hovered_pos = 3;
-			if(lx < 10)
-				lx = 10;
-			if(x >= 750)
-				hovered_seq = lx - 1;
-			else
-				hovered_seq = (x - 314) * (lx - 1) / 436;
-			if(hovered_seq >= static_cast<int>(current_deck.side.size())) {
-				hovered_seq = -1;
-				hovered_code = 0;
-			} else {
-				hovered_code = current_deck.side[hovered_seq]->code;
-				if(x >= 772)
-					is_lastcard = 1;
-			}
-		}
-	} else if(x >= 810 && x <= 995 && y >= 165 && y <= 626) {
-		const int offset = (mainGame->scrFilter->getPos() % DECK_SEARCH_SCROLL_STEP) * -1.f * 0.65f;
-		hovered_pos = 4;
-		hovered_seq = (y - 165 - offset) / 66;
-		int pos = floor(mainGame->scrFilter->getPos() / DECK_SEARCH_SCROLL_STEP) + hovered_seq;
-		if(pos >= (int)results.size()) {
-			hovered_seq = -1;
-			hovered_code = 0;
-		} else {
+
+	auto UpdateHoverCode = [&]() {
+		if(searchResultRect.isPointInside(relative_mouse_pos)) {
+			hovered_pos = 4;
+			if(results.empty())
+				return;
+			const int offset = (mainGame->scrFilter->getPos() % DECK_SEARCH_SCROLL_STEP) * -1.f * 0.65f;
+			auto seq = (y - 165 - offset) / 66;
+			int pos = (mainGame->scrFilter->getPos() / DECK_SEARCH_SCROLL_STEP) + seq;
+
+			if(pos >= static_cast<int>(results.size()))
+				return;
+
+			hovered_seq = seq;
 			hovered_code = results[pos]->code;
+			return;
 		}
-	}
+
+		if(x < 314 || x > 794)
+			return;
+
+		if(y >= 164 && y <= 435) {
+			constexpr auto DECK_LIST_VERTICAL_SPACING = 4;
+			hovered_pos = 1;
+			int pile_size = static_cast<int>(current_deck.main.size());
+			if(pile_size == 0)
+				return;
+			int cards_per_row = 10;
+			bool last_row_not_full = false;
+			if(current_deck.main.size() > 40) {
+				auto res = div(pile_size + 3, 4);
+				cards_per_row = res.quot;
+				last_row_not_full = res.rem != 3;
+			}
+			int y_index = (y - 164) / (CARD_THUMB_HEIGHT + DECK_LIST_VERTICAL_SPACING);
+			int x_index = cards_per_row - 1;
+			if(x < 750)
+				x_index = ((x - 314) * x_index) / 436;
+			auto seq = y_index * cards_per_row + x_index;
+			if(seq >= pile_size) {
+				if(!last_row_not_full)
+					return;
+				const float dx = 436.0f / (cards_per_row - 1);
+				auto a = ((pile_size % cards_per_row) - 1) * dx + CARD_THUMB_WIDTH;
+				if((x - 314) >= a)
+					return;
+				seq = y_index * cards_per_row + ((pile_size % cards_per_row) - 1);
+			}
+			hovered_seq = seq;
+			hovered_code = current_deck.main[hovered_seq]->code;
+			return;
+		}
+		if(y >= 466 && y <= 530) {
+			hovered_pos = 2;
+			int pile_size = static_cast<int>(current_deck.extra.size());
+			if(pile_size == 0)
+				return;
+			int cards_per_row = std::max(10, pile_size);
+			auto seq = cards_per_row - 1;
+			if(x < 750)
+				seq = ((x - 314) * seq) / 436;
+			if(seq >= pile_size)
+				return;
+			hovered_seq = seq;
+			hovered_code = current_deck.extra[hovered_seq]->code;
+			is_lastcard = x >= 772;
+			return;
+		}
+		if(y >= 564 && y <= 628) {
+			hovered_pos = 3;
+			int pile_size = static_cast<int>(current_deck.side.size());
+			if(pile_size == 0)
+				return;
+			int cards_per_row = std::max(10, pile_size);
+			auto seq = cards_per_row - 1;
+			if(x < 750)
+				seq = ((x - 314) * seq) / 436;
+			if(seq >= pile_size)
+				return;
+			hovered_seq = seq;
+			hovered_code = current_deck.side[hovered_seq]->code;
+			is_lastcard = x >= 772;
+		}
+	};
+	UpdateHoverCode();
 	if(is_draging) {
 		dragx = mouse_pos.X;
 		dragy = mouse_pos.Y;
@@ -1033,7 +1057,11 @@ void DeckBuilder::StartFilter(bool force_refresh) {
 	filter_lm = static_cast<limitation_search_filters>(mainGame->cbLimit->getItemData(mainGame->cbLimit->getSelected()));
 	if(filter_type == 1) {
 		filter_attrib = mainGame->cbAttribute->getItemData(mainGame->cbAttribute->getSelected());
-		filter_race = mainGame->cbRace->getItemData(mainGame->cbRace->getSelected());
+		auto selected = mainGame->cbRace->getItemData(mainGame->cbRace->getSelected());
+		if(selected == 0)
+			filter_race = 0;
+		else
+			filter_race = UINT64_C(1) << (selected - 1);
 		filter_atk = parse_filter(mainGame->ebAttack->getText(), filter_atktype);
 		filter_def = parse_filter(mainGame->ebDefense->getText(), filter_deftype);
 		filter_lv = parse_filter(mainGame->ebStar->getText(), filter_lvtype);
@@ -1306,26 +1334,28 @@ void DeckBuilder::ClearFilter() {
 		mainGame->btnMark[i]->setPressed(false);
 }
 void DeckBuilder::SortList() {
-	auto left = results.begin();
-	for(auto it = results.begin(); it != results.end(); ++it) {
-		if(searched_terms.find(std::wstring{ gDataManager->GetUppercaseName((*it)->code) }) != searched_terms.end()) {
+	auto sort = [&](auto& comparator) {
+		std::sort(results.begin(), results.end(), comparator);
+	};
+	switch(mainGame->cbSortType->getSelected()) {
+	case 0:
+		sort(DataManager::deck_sort_lv);
+		break;
+	case 1:
+		sort( DataManager::deck_sort_atk);
+		break;
+	case 2:
+		sort(DataManager::deck_sort_def);
+		break;
+	case 3:
+		sort(DataManager::deck_sort_name);
+		break;
+	}
+	for(auto it = results.begin(), left = it; it != results.end(); ++it) {
+		if(searched_terms.find(gDataManager->GetUppercaseName((*it)->code)) != searched_terms.end()) {
 			std::iter_swap(left, it);
 			++left;
 		}
-	}
-	switch(mainGame->cbSortType->getSelected()) {
-	case 0:
-		std::sort(left, results.end(), DataManager::deck_sort_lv);
-		break;
-	case 1:
-		std::sort(left, results.end(), DataManager::deck_sort_atk);
-		break;
-	case 2:
-		std::sort(left, results.end(), DataManager::deck_sort_def);
-		break;
-	case 3:
-		std::sort(left, results.end(), DataManager::deck_sort_name);
-		break;
 	}
 }
 void DeckBuilder::ClearDeck() {

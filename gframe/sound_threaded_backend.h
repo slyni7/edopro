@@ -8,26 +8,26 @@
 
 class SoundThreadedBackend : public SoundBackend {
 public:
-	virtual ~SoundThreadedBackend() override;
-	virtual void SetSoundVolume(double volume) override;
-	virtual void SetMusicVolume(double volume) override;
-	virtual bool PlayMusic(const std::string& name, bool loop) override;
-	virtual bool PlaySound(const std::string& name) override;
-	virtual void StopSounds() override;
-	virtual void StopMusic() override;
-	virtual void PauseMusic(bool pause) override;
-	virtual bool MusicPlaying() override;
-	virtual void Tick() override;
-	virtual std::vector<epro::path_stringview> GetSupportedSoundExtensions() const override {
+	~SoundThreadedBackend() override;
+	void SetSoundVolume(double volume) override;
+	void SetMusicVolume(double volume) override;
+	bool PlayMusic(const std::string& name, bool loop) override;
+	bool PlaySound(const std::string& name) override;
+	void StopSounds() override;
+	void StopMusic() override;
+	void PauseMusic(bool pause) override;
+	bool MusicPlaying() override;
+	void Tick() override;
+	std::vector<epro::path_stringview> GetSupportedSoundExtensions() const override {
 		return m_BaseBackend->GetSupportedSoundExtensions();
 	}
-	virtual std::vector<epro::path_stringview> GetSupportedMusicExtensions() const override {
+	std::vector<epro::path_stringview> GetSupportedMusicExtensions() const override {
 		return m_BaseBackend->GetSupportedMusicExtensions();
 	}
 protected:
 	explicit SoundThreadedBackend(std::unique_ptr<SoundBackend>&&);
 private:
-	enum class ActionType {
+	enum class ActionType : uint8_t {
 		SET_SOUND_VOLUME,
 		SET_MUSIC_VOLUME,
 		PLAY_MUSIC,
@@ -80,7 +80,7 @@ private:
 template<typename T>
 class SoundThreadedBackendHelper final : public SoundThreadedBackend {
 public:
-	SoundThreadedBackendHelper() : SoundThreadedBackend(std::unique_ptr<SoundBackend>(new T())) {}
+	SoundThreadedBackendHelper() : SoundThreadedBackend(std::make_unique<T>()) {}
 	virtual ~SoundThreadedBackendHelper() override = default;
 };
 

@@ -26,6 +26,7 @@
 #include <IGUITabControl.h>
 #include <IGUITable.h>
 #include <IGUIWindow.h>
+#include "address.h"
 
 namespace ygo {
 
@@ -107,12 +108,12 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 	case irr::EET_GUI_EVENT: {
 		irr::gui::IGUIElement* caller = event.GUIEvent.Caller;
 		int id = caller->getID();
-		if(mainGame->wRules->isVisible() && (id != BUTTON_RULE_OK && id != CHECKBOX_EXTRA_RULE && id != COMBOBOX_DUEL_RULE))
+		if(mainGame->wRules->isVisible() && (id != BUTTON_RULE_OK && id != CHECKBOX_EXTRA_RULE && id != COMBOBOX_DUEL_RULE && id != EDITBOX_TEAM_COUNT))
 			break;
 		if(mainGame->wMessage->isVisible() && id != BUTTON_MSG_OK &&
 		   prev_operation != ACTION_UPDATE_PROMPT
 		   && prev_operation != ACTION_SHOW_CHANGELOG
-#if defined(__linux__) && !defined(__ANDROID__) && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
+#if EDOPRO_LINUX && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
 		   && prev_operation != ACTION_TRY_WAYLAND
 #endif
 		   )
@@ -194,11 +195,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_JOIN_HOST: {
 				try {
-					auto parsed = DuelClient::ResolveServer(mainGame->ebJoinHost->getText(), mainGame->ebJoinPort->getText());
+					const auto parsed = epro::Host::resolve(mainGame->ebJoinHost->getText(), mainGame->ebJoinPort->getText());
 					gGameConfig->lasthost = mainGame->ebJoinHost->getText();
 					gGameConfig->lastport = mainGame->ebJoinPort->getText();
 					mainGame->dInfo.secret.pass = mainGame->ebJoinPass->getText();
-					if(DuelClient::StartClient(parsed.first, parsed.second, 0, false)) {
+					if(DuelClient::StartClient(parsed.address, parsed.port, 0, false)) {
 						mainGame->btnCreateHost->setEnabled(false);
 						mainGame->btnJoinHost->setEnabled(false);
 						mainGame->btnJoinCancel->setEnabled(false);
@@ -270,7 +271,8 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 					mainGame->gBot.Refresh(gGameConfig->filterBot * (mainGame->cbDuelRule->getSelected() + 1), gGameConfig->lastBot);
 					if(!NetServer::StartServer(host_port))
 						break;
-					if(!DuelClient::StartClient(0x100007F /*127.0.0.1 in network byte order*/, host_port)) {
+					const auto ip = 0x100007F; //127.0.0.1 in network byte order
+					if(!DuelClient::StartClient({ &ip, epro::Address::INET }, host_port)) {
 						NetServer::StopServer();
 						break;
 					}
@@ -559,29 +561,42 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_YES: {
 				mainGame->HideElement(mainGame->wQuery);
-#if defined(__linux__) && !defined(__ANDROID__) && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
-				if(prev_operation == ACTION_TRY_WAYLAND) {
+				switch(prev_operation) {
+#if EDOPRO_LINUX && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
+				case ACTION_TRY_WAYLAND: {
 					gGameConfig->useWayland = 1;
 					mainGame->SaveConfig();
 					Utils::Reboot();
 				}
 #endif
-				if(prev_operation == BUTTON_DELETE_REPLAY) {
+				case BUTTON_DELETE_REPLAY: {
 					if(Replay::DeleteReplay(Utils::ToPathString(mainGame->lstReplayList->getListItem(prev_sel, true)))) {
 						mainGame->stReplayInfo->setText(L"");
 						mainGame->lstReplayList->refreshList();
 					}
-				} else if(prev_operation == BUTTON_DELETE_SINGLEPLAY) {
+					break;
+				}
+				case BUTTON_DELETE_SINGLEPLAY: {
 					if(Utils::FileDelete(Utils::ToPathString(mainGame->lstSinglePlayList->getListItem(prev_sel, true)))) {
 						mainGame->stSinglePlayInfo->setText(L"");
 						mainGame->lstSinglePlayList->refreshList();
 					}
-				} else if(prev_operation == ACTION_UPDATE_PROMPT) {
+					break;
+				}
+				case ACTION_UPDATE_PROMPT: {
 					gClientUpdater->StartUpdate(Game::UpdateDownloadBar, mainGame);
 					mainGame->HideElement(mainGame->wMainMenu);
 					mainGame->PopupElement(mainGame->updateWindow);
-				} else if (prev_operation == ACTION_SHOW_CHANGELOG) {
-					Utils::SystemOpen(EPRO_TEXT("https://github.com/edo9300/edopro/releases"));
+					break;
+				}
+				case ACTION_SHOW_CHANGELOG: {
+					Utils::SystemOpen(EPRO_TEXT("https://github.com/edo9300/edopro/releases"), Utils::OPEN_URL);
+					break;
+				}
+				case ACTION_ACKNOWLEDGE_HOST: {
+					DuelClient::JoinFromDiscord();
+					break;
+				}
 				}
 				prev_operation = 0;
 				prev_sel = -1;
@@ -589,7 +604,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_NO: {
 				switch(prev_operation) {
-#if defined(__linux__) && !defined(__ANDROID__) && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
+#if EDOPRO_LINUX && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
 				case ACTION_TRY_WAYLAND:
 					gGameConfig->useWayland = 0;
 					mainGame->SaveConfig();
@@ -648,10 +663,9 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				int sel = mainGame->lstHostList->getSelected();
 				if(sel == -1)
 					break;
-				int addr = DuelClient::hosts[sel].ipaddr;
-				int port = DuelClient::hosts[sel].port;
-				mainGame->ebJoinHost->setText(epro::format(L"{}.{}.{}.{}", addr & 0xff, (addr >> 8) & 0xff, (addr >> 16) & 0xff, (addr >> 24) & 0xff).data());
-				mainGame->ebJoinPort->setText(fmt::to_wstring(port).data());
+				const auto& selection = DuelClient::hosts[sel];
+				mainGame->ebJoinHost->setText(fmt::to_wstring(selection.address).data());
+				mainGame->ebJoinPort->setText(fmt::to_wstring(selection.port).data());
 				break;
 			}
 			case LISTBOX_REPLAY_LIST: {
@@ -735,11 +749,11 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 				if(sel == -1)
 					break;
 				try {
-					auto parsed = DuelClient::ResolveServer(mainGame->ebJoinHost->getText(), mainGame->ebJoinPort->getText());
+					const auto parsed = epro::Host::resolve(mainGame->ebJoinHost->getText(), mainGame->ebJoinPort->getText());
 					gGameConfig->lasthost = mainGame->ebJoinHost->getText();
 					gGameConfig->lastport = mainGame->ebJoinPort->getText();
 					mainGame->dInfo.secret.pass = mainGame->ebJoinPass->getText();
-					if(DuelClient::StartClient(parsed.first, parsed.second, 0, false)) {
+					if(DuelClient::StartClient(parsed.address, parsed.port, 0, false)) {
 						mainGame->btnCreateHost->setEnabled(false);
 						mainGame->btnJoinHost->setEnabled(false);
 						mainGame->btnJoinCancel->setEnabled(false);
@@ -1088,7 +1102,7 @@ bool MenuHandler::OnEvent(const irr::SEvent& event) {
 		}
 		break;
 	}
-#ifndef __ANDROID__
+#if !EDOPRO_ANDROID && !EDOPRO_IOS
 	case irr::EET_DROP_EVENT: {
 		static std::wstring to_open_file;
 		switch(event.DropEvent.DropType) {

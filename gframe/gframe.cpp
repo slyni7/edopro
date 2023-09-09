@@ -1,15 +1,16 @@
 #include "config.h"
-#ifdef _WIN32
+#if EDOPRO_WINDOWS
 #define WIN32_LEAN_AND_MEAN
 #include <Tchar.h> //_tmain
 #else
-#if defined(EDOPRO_IOS)
+#if EDOPRO_IOS
 #define _tmain epro_ios_main
 #else
 #define _tmain main
 #endif //EDOPRO_IOS
 #include <unistd.h>
-#endif //_WIN32
+#include <signal.h>
+#endif //EDOPRO_WINDOWS
 #include <curl/curl.h>
 #include <event2/thread.h>
 #include <IrrlichtDevice.h>
@@ -27,7 +28,7 @@
 #include "log.h"
 #include "joystick_wrapper.h"
 #include "utils_gui.h"
-#ifdef EDOPRO_MACOS
+#if EDOPRO_MACOS
 #include "osx_menu.h"
 #endif
 
@@ -65,18 +66,24 @@ enum LAUNCH_PARAM {
 	CHANGELOG,
 	DISCORD,
 	OVERRIDE_UPDATE_URL,
+	WANTS_TO_RUN_AS_ADMIN,
 	COUNT,
 };
 
-LAUNCH_PARAM GetOption(epro::path_char option) {
-	switch(static_cast<char>(option)) {
-	case 'C': return LAUNCH_PARAM::WORK_DIR;
-	case 'm': return LAUNCH_PARAM::MUTE;
-	case 'l': return LAUNCH_PARAM::CHANGELOG;
-	case 'D': return LAUNCH_PARAM::DISCORD;
-	case 'u': return LAUNCH_PARAM::OVERRIDE_UPDATE_URL;
-	default: return LAUNCH_PARAM::COUNT;
+LAUNCH_PARAM GetOption(epro::path_stringview option) {
+	if(option.size() == 1) {
+		switch(option.front()) {
+		case EPRO_TEXT('C'): return LAUNCH_PARAM::WORK_DIR;
+		case EPRO_TEXT('m'): return LAUNCH_PARAM::MUTE;
+		case EPRO_TEXT('l'): return LAUNCH_PARAM::CHANGELOG;
+		case EPRO_TEXT('D'): return LAUNCH_PARAM::DISCORD;
+		case EPRO_TEXT('u'): return LAUNCH_PARAM::OVERRIDE_UPDATE_URL;
+		default: return LAUNCH_PARAM::COUNT;
+		}
 	}
+	if(option == EPRO_TEXT("i-want-to-be-admin"_sv))
+		return LAUNCH_PARAM::WANTS_TO_RUN_AS_ADMIN;
+	return LAUNCH_PARAM::COUNT;
 }
 
 struct Option {
@@ -93,7 +100,7 @@ args_t ParseArguments(int argc, epro::path_char* argv[]) {
 		if(parameter.size() < 2)
 			break;
 		if(parameter[0] == EPRO_TEXT('-')) {
-			auto launch_param = GetOption(parameter[1]);
+			auto launch_param = GetOption(parameter.substr(1));
 			if(launch_param == LAUNCH_PARAM::COUNT)
 				continue;
 			epro::path_stringview argument;
@@ -107,8 +114,7 @@ args_t ParseArguments(int argc, epro::path_char* argv[]) {
 			res[launch_param].enabled = true;
 			res[launch_param].argument = argument;
 			continue;
-		} else if(parameter == EPRO_TEXT("show_changelog"))
-			res[LAUNCH_PARAM::CHANGELOG].enabled = true;
+		}
 	}
 	return res;
 }
@@ -121,7 +127,7 @@ void CheckArguments(const args_t& args) {
 }
 
 inline void ThreadsStartup() {
-#ifdef _WIN32
+#if EDOPRO_WINDOWS
 	const WORD wVersionRequested = MAKEWORD(2, 2);
 	WSADATA wsaData;
 	auto wsaret = WSAStartup(wVersionRequested, &wsaData);
@@ -140,7 +146,7 @@ inline void ThreadsStartup() {
 inline void ThreadsCleanup() {
 	curl_global_cleanup();
 	libevent_global_shutdown();
-#ifdef _WIN32
+#if EDOPRO_WINDOWS
 	WSACleanup();
 #endif
 }
@@ -164,9 +170,17 @@ using Game = ygo::Game;
 
 }
 
-int _tmain(int argc, epro::path_char* argv[]) {
+int _tmain(int argc, epro::path_char** argv) {
 	std::puts(EDOPRO_VERSION_STRING_DEBUG);
 	const auto args = ParseArguments(argc, argv);
+	if(ygo::Utils::IsRunningAsAdmin() && !args[LAUNCH_PARAM::WANTS_TO_RUN_AS_ADMIN].enabled) {
+		constexpr auto err = "Attempted to run the game as administrator.\n"
+			"You should NEVER have to run the game with elevated priviledges.\n"
+			"If for some reason you REALLY want to do that, launch the game with the option \"-i-want-to-be-admin\""_sv;
+		epro::print("{}\n", err);
+		ygo::GUIUtils::ShowErrorWindow("Initialization fail", err);
+		return EXIT_FAILURE;
+	}
 	{
 		const auto& workdir = args[LAUNCH_PARAM::WORK_DIR];
 		const epro::path_stringview dest = workdir.enabled ? workdir.argument : ygo::Utils::GetExeFolder();
@@ -174,7 +188,7 @@ int _tmain(int argc, epro::path_char* argv[]) {
 			const auto err = epro::format("failed to change directory to: {} ({})",
 										 ygo::Utils::ToUTF8IfNeeded(dest), ygo::Utils::GetLastErrorString());
 			ygo::ErrorLog(err);
-			fmt::print("{}\n", err);
+			epro::print("{}\n", err);
 			ygo::GUIUtils::ShowErrorWindow("Initialization fail", err);
 			return EXIT_FAILURE;
 		}
@@ -185,14 +199,19 @@ int _tmain(int argc, epro::path_char* argv[]) {
 	} catch(const std::exception& e) {
 		epro::stringview text(e.what());
 		ygo::ErrorLog(text);
-		fmt::print("{}\n", text);
+		epro::print("{}\n", text);
 		ygo::GUIUtils::ShowErrorWindow("Initialization fail", text);
 		return EXIT_FAILURE;
 	}
 	show_changelog = args[LAUNCH_PARAM::CHANGELOG].enabled;
-#ifndef _WIN32
+#if EDOPRO_POSIX
 	setlocale(LC_CTYPE, "UTF-8");
-#endif //_WIN32
+	struct sigaction sa;
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	(void)sigaction(SIGCHLD, &sa, 0);
+#endif //EDOPRO_POSIX
 	ygo::ClientUpdater updater(args[LAUNCH_PARAM::OVERRIDE_UPDATE_URL].argument);
 	ygo::gClientUpdater = &updater;
 	std::unique_ptr<ygo::DataHandler> data{ nullptr };
@@ -208,18 +227,18 @@ int _tmain(int argc, epro::path_char* argv[]) {
 	catch(const std::exception& e) {
 		epro::stringview text(e.what());
 		ygo::ErrorLog(text);
-		fmt::print("{}\n", text);
+		epro::print("{}\n", text);
 		ygo::GUIUtils::ShowErrorWindow("Initialization fail", text);
 		ThreadsCleanup();
 		return EXIT_FAILURE;
 	}
 	if (!data->configs->noClientUpdates)
 		updater.CheckUpdates();
-#ifdef _WIN32
+#if EDOPRO_WINDOWS
 	if(!data->configs->showConsole)
 		FreeConsole();
 #endif
-#ifdef EDOPRO_MACOS
+#if EDOPRO_MACOS
 	EDOPRO_SetupMenuBar([]() {
 		ygo::gGameConfig->fullscreen = !ygo::gGameConfig->fullscreen;
 		ygo::mainGame->gSettings.chkFullscreen->setChecked(ygo::gGameConfig->fullscreen);
@@ -239,13 +258,13 @@ int _tmain(int argc, epro::path_char* argv[]) {
 		catch(const std::exception& e) {
 			epro::stringview text(e.what());
 			ygo::ErrorLog(text);
-			fmt::print("{}\n", text);
+			epro::print("{}\n", text);
 			ygo::GUIUtils::ShowErrorWindow("Assets load fail", text);
 			ThreadsCleanup();
 			return EXIT_FAILURE;
 		}
 		if(firstlaunch) {
-			joystick = std::unique_ptr<JWrapper>(new JWrapper(ygo::mainGame->device));
+			joystick = std::make_unique<JWrapper>(ygo::mainGame->device);
 			gJWrapper = joystick.get();
 			firstlaunch = false;
 			CheckArguments(args);

@@ -12,7 +12,7 @@
 namespace ygo {
 
 GameConfig::GameConfig() {
-#ifdef __ANDROID__
+#if EDOPRO_ANDROID
 	Load(epro::format("{}/system.conf", porting::internal_storage));
 #endif
 	Load(EPRO_TEXT("./config/system.conf"));
@@ -79,15 +79,15 @@ std::wstring parseOption(std::string& value) {
 template<>
 irr::video::E_DRIVER_TYPE parseOption<irr::video::E_DRIVER_TYPE>(std::string& value) {
 	Utils::ToUpperNoAccentsSelf(value);
-#ifndef __ANDROID__
+#if !EDOPRO_ANDROID
 	if(value == "OPENGL")
 		return irr::video::EDT_OPENGL;
-#ifdef _WIN32
+#if EDOPRO_WINDOWS
 	if(value == "D3D9")
 		return irr::video::EDT_DIRECT3D9;
 #endif
 #endif
-#if !defined(EDOPRO_MACOS) && IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9
+#if !EDOPRO_MACOS && IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9
 	if(value == "OGLES1")
 		return irr::video::EDT_OGLES1;
 	if(value == "OGLES2")
@@ -145,12 +145,12 @@ int parseOption<int, ygo::GameConfig::MaxFPSConfig>(std::string& value) {
 
 template<>
 int parseOption<int, ygo::GameConfig::MusicConfig>(std::string& value) {
-	return std::min(std::max(std::stoi(value), 0), 100);;
+	return std::min(std::max(std::stoi(value), 0), 100);
 }
 
 template<>
-uint8_t parseOption<uint8_t, ygo::GameConfig::BoolAsInt>(std::string& value) {
-	return !!std::stoi(value);
+uint8_t parseOption<uint8_t, ygo::GameConfig::BoolMaybeUndefined>(std::string& value) {
+	return std::min<uint8_t>(static_cast<uint8_t>(std::stoul(value)), 2);
 }
 
 template<typename T>

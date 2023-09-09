@@ -39,6 +39,7 @@
 #include <IGUIScrollBar.h>
 #include "joystick_wrapper.h"
 #include "porting.h"
+#include "config.h"
 
 namespace {
 
@@ -55,7 +56,7 @@ inline void SetCheckbox(irr::gui::IGUICheckBox* chk, bool state) {
 	TriggerEvent(chk, irr::gui::EGET_CHECKBOX_CHANGED);
 }
 
-#if defined(__ANDROID__) || defined(EDOPRO_IOS)
+#if EDOPRO_ANDROID || EDOPRO_IOS
 inline bool TransformEvent(const irr::SEvent& event, bool& stopPropagation) {
 	return porting::transformEvent(event, stopPropagation);
 }
@@ -857,7 +858,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			}
 			case CHECK_RACE: {
 				uint64_t rac = 0, filter = 0x1, count = 0;
-				for(int i = 0; i < 25; ++i, filter <<= 1) {
+				for(size_t i = 0; i < sizeofarr(mainGame->chkRace); ++i, filter <<= 1) {
 					if(mainGame->chkRace[i]->isChecked()) {
 						rac |= filter;
 						count++;
@@ -1613,13 +1614,12 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 					SetShowMark(mcard, true);
 					if(mcard->code) {
 						mainGame->ShowCardInfo(mcard->code);
-						if(mcard->location & (0xe|0x400)) {
+						if(mcard->location & (LOCATION_HAND | LOCATION_MZONE | LOCATION_SZONE | LOCATION_SKILL)) {
 							std::wstring str(gDataManager->GetName(mcard->code));
+							if(!CardDataC::IsInArtworkOffsetRange(mcard) && str != gDataManager->GetName(mcard->alias)) {
+								str.append(epro::format(L"\n({})", gDataManager->GetName(mcard->alias)));
+							}
 							if(mcard->type & TYPE_MONSTER) {
-								if(mcard->alias && (mcard->alias < mcard->code - 10 || mcard->alias > mcard->code + 10)
-										&& wcscmp(gDataManager->GetName(mcard->code).data(), gDataManager->GetName(mcard->alias).data())) {
-									str.append(epro::format(L"\n({})",gDataManager->GetName(mcard->alias)));
-								}
 								if (mcard->type & TYPE_LINK) {
 									str.append(epro::format(L"\n{}/Link {}\n{}/{}", mcard->atkstring, mcard->link, gDataManager->FormatRace(mcard->race),
 										gDataManager->FormatAttribute(mcard->attribute)));
@@ -1631,16 +1631,9 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 										str.append(epro::format(L"\n{}{} {}/{}", (mcard->level ? L"\u2605" : L"\u2606"), (mcard->level ? mcard->level : mcard->rank), gDataManager->FormatRace(mcard->race), gDataManager->FormatAttribute(mcard->attribute)));
 									}
 								}
-								if(mcard->location == LOCATION_HAND && (mcard->type & TYPE_PENDULUM)) {
-									str.append(epro::format(L"\n{}/{}", mcard->lscale, mcard->rscale));
-								}
-							} else {
-								if(mcard->alias && (mcard->alias < mcard->code - 10 || mcard->alias > mcard->code + 10)) {
-									str.append(epro::format(L"\n({})", gDataManager->GetName(mcard->alias)));
-								}
-								if(mcard->location == LOCATION_SZONE && (mcard->type & TYPE_PENDULUM)) {
-									str.append(epro::format(L"\n{}/{}", mcard->lscale, mcard->rscale));
-								}
+							}
+							if((mcard->location & (LOCATION_HAND | LOCATION_SZONE)) != 0 && (mcard->type & TYPE_PENDULUM)) {
+								str.append(epro::format(L"\n{}/{}", mcard->lscale, mcard->rscale));
 							}
 							for(auto ctit = mcard->counters.begin(); ctit != mcard->counters.end(); ++ctit) {
 								str.append(epro::format(L"\n[{}]: {}", gDataManager->GetCounterName(ctit->first), ctit->second));
@@ -1836,7 +1829,7 @@ static bool IsTrulyVisible(const irr::gui::IGUIElement* elem) {
 			return true;
 	}
 	return false;
-};
+}
 bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation) {
 	static irr::u32 buttonstates = 0;
 	static uint8_t resizestate = gGameConfig->fullscreen ? 2 : 0;
@@ -2087,7 +2080,7 @@ bool ClientField::OnCommonEvent(const irr::SEvent& event, bool& stopPropagation)
 				gGameConfig->logDownloadErrors = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
 				break;
 			}
-#ifdef __ANDROID__
+#if EDOPRO_ANDROID
 			case CHECKBOX_NATIVE_KEYBOARD: {
 				gGameConfig->native_keyboard = static_cast<irr::gui::IGUICheckBox*>(event.GUIEvent.Caller)->isChecked();
 				break;
@@ -2491,12 +2484,12 @@ irr::core::vector3df MouseToPlane(const irr::core::vector2d<irr::s32>& mouse, co
 	return startintersection;
 }
 
-inline irr::core::vector3df MouseToField(irr::core::vector2d<irr::s32> mouse) {
+inline irr::core::vector3df MouseToField(const irr::core::vector2d<irr::s32>& mouse) {
 	const auto& vec = matManager.getExtra()[0];
 	return MouseToPlane(mouse, { vec[0].Pos, vec[1].Pos, vec[2].Pos });
 }
 
-bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, std::vector<ClientCard*>& hand) {
+bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, const std::vector<ClientCard*>& hand) {
 	if(hand.empty()) return false;
 	irr::core::recti rect{ hand.front()->hand_collision.UpperLeftCorner, hand.back()->hand_collision.LowerRightCorner };
 	if(!rect.isValid())
@@ -2504,7 +2497,7 @@ bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, std::vector<ClientCar
 	return rect.isPointInside(mouse);
 }
 
-void ClientField::GetHoverField(irr::core::vector2d<irr::s32> mouse) {
+void ClientField::GetHoverField(const irr::core::vector2d<irr::s32>& mouse) {
 	const int three_columns = mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD);
 	const int not_separate_pzones = !mainGame->dInfo.HasFieldFlag(DUEL_SEPARATE_PZONE);
 	if(CheckHand(mouse, hand[0])) {
@@ -2881,7 +2874,7 @@ static int GetSuitableReturn(uint32_t maxseq, uint32_t size) {
 template<typename T>
 static inline void WriteCard(ProgressiveBuffer& buffer, uint32_t i, uint32_t value) {
 	static constexpr auto off = 8 >> (sizeof(T) / 2);
-	buffer.at<T>(i + off) = static_cast<T>(value);
+	buffer.set<T>(i + off, static_cast<T>(value));
 }
 void ClientField::SetResponseSelectedCards() const {
 	if (!mainGame->dInfo.compat_mode) {
@@ -2897,28 +2890,28 @@ void ClientField::SetResponseSelectedCards() const {
 			ProgressiveBuffer ret;
 			switch(GetSuitableReturn(maxseq, size)) {
 				case 3: {
-					ret.at<int32_t>(0) = 3;
+					ret.set<int32_t>(0, 3);
 					for(auto c : selected_cards)
-						ret.bitSet(c->select_seq + (sizeof(int32_t) * 8));
+						ret.bitToggle(c->select_seq + (sizeof(int32_t) * 8), true);
 					break;
 				}
 				case 2:	{
-					ret.at<int32_t>(0) = 2;
-					ret.at<uint32_t>(1) = size;
+					ret.set<int32_t>(0, 2);
+					ret.set<uint32_t>(1, size);
 					for(uint32_t i = 0; i < size; ++i)
 						WriteCard<uint8_t>(ret, i, selected_cards[i]->select_seq);
 					break;
 				}
 				case 1:	{
-					ret.at<int32_t>(0) = 1;
-					ret.at<uint32_t>(1) = size;
+					ret.set<int32_t>(0, 1);
+					ret.set<uint32_t>(1, size);
 					for(uint32_t i = 0; i < size; ++i)
 						WriteCard<uint16_t>(ret, i, selected_cards[i]->select_seq);
 					break;
 				}
 				case 0:	{
-					ret.at<int32_t>(0) = 0;
-					ret.at<uint32_t>(1) = size;
+					ret.set<int32_t>(0, 0);
+					ret.set<uint32_t>(1, size);
 					for(uint32_t i = 0; i < size; ++i)
 						WriteCard<uint32_t>(ret, i, selected_cards[i]->select_seq);
 					break;
