@@ -34,6 +34,30 @@ void DataHandler::LoadDatabases() {
 			WindBot::AddDatabase(db);
 	}
 	LoadArchivesDB();
+	char fc[50];
+	sprintf_s(fc, "./printallcard.log");
+	FILE *afp = NULL;
+	fopen_s(&afp, fc, "a+");
+	fclose(afp);
+	FILE *rfp = NULL;
+	fopen_s(&rfp, fc, "r");
+	char line[400];
+	fgets(line, 400, rfp);
+	int seed = 0;
+	sscanf(line, "%d", &seed);
+	fclose(rfp);
+	if (!seed || (seed == 9990000)) {
+		for (auto it = dataManager->cards.begin(); it != dataManager->cards.end(); ++it) {
+			int code = (*it).first;
+			char fc[50];
+			sprintf_s(fc, "./printallcard.log");
+			FILE *fp = NULL;
+			fopen_s(&fp, fc, "a+");
+			fprintf(fp, "%d", code);
+			fprintf(fp, "\n");
+			fclose(fp);
+		}
+	}
 }
 void DataHandler::LoadArchivesDB() {
 	for(auto& archive : Utils::archives) {

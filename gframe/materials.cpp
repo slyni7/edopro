@@ -25,6 +25,7 @@ inline void SetS3DVertex(Materials::QuadVertex v, irr::f32 x1, irr::f32 y1, irr:
 }
 
 Materials::Materials() {
+	SetS3DVertex(vCardCenter, -0.385f, -0.55f, 0.385f, 0.55f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardFront, -0.35f, -0.5f, 0.35f, 0.5f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardOutline, -0.375f, -0.54f, 0.37f, 0.54f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardOutliner, 0.37f, -0.54f, -0.375f, 0.54f, 0, 1, 0, 0, 1, 1);
@@ -323,6 +324,13 @@ Materials::Materials() {
 	mCard.MaterialType = irr::video::EMT_TRANSPARENT_ALPHA_CHANNEL;
 	mCard.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
 	ENABLE_ZWRITE(mCard);
+	mCenter.AmbientColor = 0xffffffff;
+	mCenter.DiffuseColor = 0xff000000;
+	mCenter.ColorMaterial = irr::video::ECM_NONE;
+	//mCard.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mCenter.MaterialType = irr::video::EMT_TRANSPARENT_ALPHA_CHANNEL;
+	mCenter.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mCenter);
 	mTexture.AmbientColor = 0xffffffff;
 	mTexture.DiffuseColor = 0xff000000;
 	mTexture.ColorMaterial = irr::video::ECM_NONE;
@@ -353,6 +361,12 @@ Materials::Materials() {
 	mMutualLinkedField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
 	mMutualLinkedField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
 	ENABLE_ZWRITE(mMutualLinkedField);
+	mImpInfField.ColorMaterial = irr::video::ECM_NONE;
+	mImpInfField.AmbientColor = 0xffffffff;
+	mImpInfField.DiffuseColor = 0xff000000;
+	mImpInfField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mImpInfField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mImpInfField);
 	mOutLine.ColorMaterial = irr::video::ECM_AMBIENT;
 	mOutLine.DiffuseColor = 0xff000000;
 	mOutLine.Thickness = 2;

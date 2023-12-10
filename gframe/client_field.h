@@ -56,6 +56,8 @@ public:
 	uint32_t disabled_field;
 	uint32_t selectable_field;
 	uint32_t selected_field;
+	uint32_t infimp_field;
+	uint32_t infimp_check;
 	uint32_t select_min;
 	uint32_t select_max;
 	uint32_t must_select_count;
@@ -75,6 +77,9 @@ public:
 	std::vector<ClientCard*> display_cards;
 	std::vector<int> sort_list;
 	std::map<uint64_t, int> player_desc_hints[2];
+	std::vector<uint64_t> crossd_codes;
+	std::vector<uint64_t> callbg_codes0;
+	std::vector<uint64_t> callbg_codes1;
 	bool grave_act[2];
 	bool remove_act[2];
 	bool deck_act[2];

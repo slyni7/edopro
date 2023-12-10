@@ -891,6 +891,7 @@ void GenericDuel::Surrender(DuelPlayer* dp) {
 	if(pduel) {
 		uint8_t wbuf[3];
 		uint32_t player = dp->type < players.home_size ? 0 : 1;
+		//uint32_t player = dp->type < players.home_size ? 1 : 0;
 		wbuf[0] = MSG_WIN;
 		wbuf[1] = 1 - player;
 		wbuf[2] = 0;
@@ -1176,7 +1177,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			NetServer::ReSendToPlayer(dueler);
 		if ((ploc == LOCATION_HAND) && (pque == QUERY_CODE)) {
 			pbufw = pbuf;
-			BufferIO::Write<uint32_t>(pbufw, 0);
+			/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}
 		SEND(nullptr);
 		for (auto& dueler : (pcon == 1) ? players.home : players.opposing)
@@ -1239,7 +1240,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			/*code = */BufferIO::Read<uint32_t>(pbuf);
 			CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, false);
 			if(info.controler != player)
-				BufferIO::Write<uint32_t>(pbufw, 0);
+				/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}
 		WaitforResponse(player);
 		SEND(cur_player[player]);
@@ -1257,7 +1258,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			int controler = BufferIO::Read<uint8_t>(pbuf);
 			pbuf += 6;
 			if(controler != player)
-				BufferIO::Write<uint32_t>(pbufw, 0);
+				/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}
 		WaitforResponse(player);
 		SEND(cur_player[player]);
@@ -1274,7 +1275,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			/*code = */BufferIO::Read<uint32_t>(pbuf);
 			CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, false);
 			if(info.controler != player)
-				BufferIO::Write<uint32_t>(pbufw, 0);
+				/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}
 		count = BufferIO::Read<uint32_t>(pbuf);
 		for(uint32_t i = 0; i < count; ++i) {
@@ -1282,7 +1283,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			/*code = */BufferIO::Read<uint32_t>(pbuf);
 			CoreUtils::loc_info info = CoreUtils::ReadLocInfo(pbuf, false);
 			if(info.controler != player)
-				BufferIO::Write<uint32_t>(pbufw, 0);
+				/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}
 		WaitforResponse(player);
 		SEND(cur_player[player]);
@@ -1319,7 +1320,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 		for(auto& dueler : (player == 0) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
 		for(uint32_t i = 0; i < count; ++i)
-			BufferIO::Write<uint32_t>(pbuf, 0);
+			/*;//test*/ BufferIO::Write<uint32_t>(pbuf, 0);
 		SEND(nullptr);
 		for(auto& dueler : (player == 1) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
@@ -1338,7 +1339,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 		for(auto& dueler : (player == 0) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
 		if (!(current.location & (LOCATION_GRAVE + LOCATION_OVERLAY)) && ((current.location & (LOCATION_DECK + LOCATION_HAND)) || (current.position & POS_FACEDOWN)))
-			BufferIO::Write<uint32_t>(pbufw, 0);
+			/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		SEND(nullptr);
 		for(auto& dueler : (player == 1) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
@@ -1348,7 +1349,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 		break;
 	}
 	case MSG_SET: {
-		BufferIO::Write<uint32_t>(pbuf, 0);
+		/*;//test*/ BufferIO::Write<uint32_t>(pbuf, 0);
 		SEND(nullptr);
 		ResendToAll();
 		packets_cache.push_back(packet);
@@ -1366,7 +1367,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 			uint32_t pos = BufferIO::Read<uint32_t>(pbufw);
 			if(!(pos & POS_FACEUP)) {
 				pbufw -= 8;
-				BufferIO::Write<uint32_t>(pbufw, 0);
+				/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 				pbufw += 4;
 			}
 		}
@@ -1399,7 +1400,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 				int pos = BufferIO::Read<uint32_t>(pbufw);
 				if (!(pos & POS_FACEUP)) {
 					pbufw -= 8;
-					BufferIO::Write<uint32_t>(pbufw, 0);
+					/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 					pbufw += 4;
 				}
 			}
@@ -1426,7 +1427,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 				int pos = BufferIO::Read<uint32_t>(pbufw);
 				if (!(pos & POS_FACEUP)) {
 					pbufw -= 8;
-					BufferIO::Write<uint32_t>(pbufw, 0);
+					/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 					pbufw += 4;
 				}
 			}

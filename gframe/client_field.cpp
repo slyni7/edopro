@@ -8,6 +8,7 @@
 #include <IGUIListBox.h>
 #include <IGUIEditBox.h>
 #include <IGUICheckBox.h>
+#include <IGUIImage.h>
 #include <IVideoDriver.h>
 #include <ICameraSceneNode.h>
 #include "game.h"
@@ -35,6 +36,8 @@ ClientField::ClientField() {
 	hovered_sequence = 0;
 	selectable_field = 0;
 	selected_field = 0;
+	infimp_field = 0;
+	infimp_check = false;
 	deck_act[0] = deck_act[1] = false;
 	grave_act[0] = grave_act[1] = false;
 	remove_act[0] = remove_act[1] = false;
@@ -99,6 +102,11 @@ void ClientField::Clear() {
 	hovered_controler = 0;
 	hovered_location = 0;
 	hovered_sequence = 0;
+	infimp_field = 0;
+	infimp_check = false;
+	callbg_codes0.clear();
+	callbg_codes1.clear();
+	crossd_codes.clear();
 	selectable_field = 0;
 	selected_field = 0;
 	deck_act[0] = deck_act[1] = false;
@@ -375,15 +383,37 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 		auto& curcard = selectable_cards[i];
 		curstring->enableOverrideColor(false);
 		// image
-		if(curcard->code)
+		if (curcard->code)
 			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->code;
-		else if(conti_selecting)
+		else if (conti_selecting)
 			mainGame->imageLoading[mainGame->btnCardSelect[i]] = curcard->chain_code;
 		else
 			mainGame->btnCardSelect[i]->setImage(mainGame->imageManager.tCover[curcard->controler]);
 		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
+		bool design0 = false;
+		bool design1 = false;
+		for (auto dcode : mainGame->dField.callbg_codes0) {
+			if (dcode == curcard->code)
+				design0 = true;
+		}
+		for (auto dcode : mainGame->dField.callbg_codes1) {
+			if (dcode == curcard->code)
+				design0 = true;
+		}
+		for (auto dcode : mainGame->dField.crossd_codes) {
+			if (dcode == curcard->code)
+				design1 = true;
+		}
+		if (design0 || design1) {
+			mainGame->iSelectNegate[i]->setImage(mainGame->imageManager.tNegated);
+			mainGame->iSelectNegate[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + 10 + i * 125), 90, static_cast<irr::s32>(startpos + 110 + i * 125), 190));
+			mainGame->iSelectNegate[i]->setVisible(true);
+		}
+		else {
+			mainGame->iSelectNegate[i]->setVisible(false);
+		}
 		if(mainGame->dInfo.curMsg != MSG_SORT_CHAIN && mainGame->dInfo.curMsg != MSG_SORT_CARD) {
 			sort_list.clear();
 			// text
@@ -439,6 +469,7 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 		for(auto i = selectable_cards.size(); i < 5; ++i) {
 			mainGame->btnCardSelect[i]->setVisible(false);
 			mainGame->stCardPos[i]->setVisible(false);
+			mainGame->iSelectNegate[i]->setVisible(false);
 		}
 		mainGame->scrCardList->setPos(0);
 		mainGame->scrCardList->setVisible(false);
@@ -472,6 +503,28 @@ void ClientField::ShowChainCard() {
 		mainGame->btnCardSelect[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
 		mainGame->btnCardSelect[i]->setPressed(false);
 		mainGame->btnCardSelect[i]->setVisible(true);
+		bool design0 = false;
+		bool design1 = false;
+		for (auto dcode : mainGame->dField.callbg_codes0) {
+			if (dcode == curcard->code)
+				design0 = true;
+		}
+		for (auto dcode : mainGame->dField.callbg_codes1) {
+			if (dcode == curcard->code)
+				design0 = true;
+		}
+		for (auto dcode : mainGame->dField.crossd_codes) {
+			if (dcode == curcard->code)
+				design1 = true;
+		}
+		if (design0 || design1) {
+			mainGame->iSelectNegate[i]->setImage(mainGame->imageManager.tNegated);
+			mainGame->iSelectNegate[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + i * 125), 55, static_cast<irr::s32>(startpos + 120 + i * 125), 225));
+			mainGame->iSelectNegate[i]->setVisible(true);
+		}
+		else {
+			mainGame->iSelectNegate[i]->setVisible(false);
+		}
 		curstring->setText(epro::format(L"{}[{}]", gDataManager->FormatLocation(curcard->location, curcard->sequence),
 			curcard->sequence + 1).data());
 		if(curcard->location == LOCATION_OVERLAY) {
@@ -494,6 +547,7 @@ void ClientField::ShowChainCard() {
 		for(auto i = selectable_cards.size(); i < 5; ++i) {
 			mainGame->btnCardSelect[i]->setVisible(false);
 			mainGame->stCardPos[i]->setVisible(false);
+			mainGame->iSelectNegate[i]->setVisible(false);
 		}
 		mainGame->scrCardList->setPos(0);
 		mainGame->scrCardList->setVisible(false);

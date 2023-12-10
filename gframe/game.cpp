@@ -460,10 +460,19 @@ void Game::Initialize() {
 		btnCardSelect[i] = irr::gui::CGUIImageButton::addImageButton(env, Scale(30 + 125 * i, 55, 150 + 125 * i, 225), wCardSelect, BUTTON_CARD_0 + i);
 		btnCardSelect[i]->setImageSize(imgsize);
 	}
+
+	for (int i = 0; i < 5; ++i) {
+		iSelectNegate[i] = AlignElementWithParent(env->addImage(Scale(40 + 125 * i, 90, 140 + 125 * i, 190), wCardSelect));
+		iSelectNegate[i]->setImage(imageManager.tNegated);
+		iSelectNegate[i]->setScaleImage(true);
+		iSelectNegate[i]->setUseAlphaChannel(true);
+	}
+
 	scrCardList = env->addScrollBar(true, Scale(30, 235, 650, 255), wCardSelect, SCROLL_CARD_SELECT);
 	scrCardList->setLargeStep(scrCardList->getMax());
 	btnSelectOK = env->addButton(Scale(300, 265, 380, 290), wCardSelect, BUTTON_CARD_SEL_OK, gDataManager->GetSysString(1211).data());
 	defaultStrings.emplace_back(btnSelectOK, 1211);
+
 	//card display
 	wCardDisplay = env->addWindow(Scale(320, 100, 1000, 400), false, L"");
 	wCardDisplay->getCloseButton()->setVisible(false);
@@ -478,6 +487,7 @@ void Game::Initialize() {
 	scrDisplayList = env->addScrollBar(true, Scale(30, 235, 650, 255), wCardDisplay, SCROLL_CARD_DISPLAY);
 	btnDisplayOK = env->addButton(Scale(300, 265, 380, 290), wCardDisplay, BUTTON_CARD_DISP_OK, gDataManager->GetSysString(1211).data());
 	defaultStrings.emplace_back(btnDisplayOK, 1211);
+
 	//announce number
 	wANNumber = env->addWindow(Scale(550, 200, 780, 295), false, L"");
 	wANNumber->getCloseButton()->setVisible(false);
@@ -2970,6 +2980,7 @@ void Game::ClearTextures() {
 	for(int i=0; i<=4; ++i) {
 		btnCardSelect[i]->setImage();
 		btnCardDisplay[i]->setImage();
+		iSelectNegate[i]->setImage(imageManager.tNegated);
 	}
 	imageManager.ClearTexture();
 }

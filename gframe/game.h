@@ -582,6 +582,9 @@ public:
 	irr::gui::IGUIStaticText *stDisplayPos[5];
 	irr::gui::IGUIScrollBar *scrDisplayList;
 	irr::gui::IGUIButton* btnDisplayOK;
+
+	irr::gui::IGUIImage* iSelectNegate[5];
+
 	//announce number
 	irr::gui::IGUIWindow* wANNumber;
 	irr::gui::IGUIComboBox* cbANNumber;

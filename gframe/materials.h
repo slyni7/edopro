@@ -14,7 +14,8 @@ public:
 	void SetActiveVertices(int three_columns, int not_separate_pzones);
 
 	using QuadVertex = irr::video::S3DVertex[4];
-	
+
+	QuadVertex vCardCenter;
 	QuadVertex vCardFront;
 	QuadVertex vCardOutline;
 	QuadVertex vCardOutliner;
@@ -50,12 +51,14 @@ public:
 	//irr::u16 iBackLine[116];
 	irr::u16 iArrow[40];
 	irr::video::SMaterial mCard;
+	irr::video::SMaterial mCenter;
 	irr::video::SMaterial mTexture;
 	irr::video::SMaterial mBackLine;
 	irr::video::SMaterial mOutLine;
 	irr::video::SMaterial mSelField;
 	irr::video::SMaterial mLinkedField;
 	irr::video::SMaterial mMutualLinkedField;
+	irr::video::SMaterial mImpInfField;
 	irr::video::SMaterial mTRTexture;
 	irr::video::SMaterial mATK;
 private:

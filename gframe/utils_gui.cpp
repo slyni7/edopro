@@ -149,7 +149,7 @@ irr::IrrlichtDevice* GUIUtils::CreateDevice(GameConfig* configs) {
 	driver->setTextureCreationFlag(irr::video::ETCF_CREATE_MIP_MAPS, false);
 	driver->setTextureCreationFlag(irr::video::ETCF_OPTIMIZED_FOR_QUALITY, true);
 #if !(IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
-	device->setWindowCaption(L"Project Ignis: TsukasaPro");
+	device->setWindowCaption(L"Project Ignis: MikaPro");
 	device->setResizable(true);
 #if EDOPRO_WINDOWS
 	auto hInstance = static_cast<HINSTANCE>(GetModuleHandle(nullptr));

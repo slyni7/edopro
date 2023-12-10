@@ -33,6 +33,35 @@ void ClientCard::UpdateInfo(const CoreUtils::Query& query) {
 	CHECK_AND_SET(QUERY_REASON, reason);
 	CHECK_AND_SET(QUERY_OWNER, owner);
 	CHECK_AND_SET(QUERY_STATUS, status);
+	/*if (query.flag & QUERY_STATUS) {
+		if (!(status & STATUS_DISABLED)
+			&& (query.status & STATUS_DISABLED)) {
+			for (int ct = 0; ct < mainGame->dField.chains.size(); ct++) {
+				ChainInfo chain = mainGame->dField.chains[ct];
+				if (chain.solved) {
+					ClientCard* card = chain.chain_card;
+					if (card->code == 10045474) {
+						if (!(card->status & STATUS_ACT_FROM_HAND)
+							&& (card->location == LOCATION_SZONE)) {
+							for (const auto target : chain.target) {
+								if ((target->sequence == sequence)
+									&& (target->location == location)
+									&& (target->controler == controler)) {
+									int seq = card->sequence;
+									int con = card->controler;
+									mainGame->dField.infimp_field |=
+										(1 << (8 + ((con << 4) + seq))) | (1 << (8 + ((1 - con) << 4) + (4 - seq)));
+									break;
+								}
+							}
+						}
+					}
+					break;
+				}
+			}
+		}
+		status = query.status;
+	}*/
 	CHECK_AND_SET(QUERY_COVER, cover);
 	if(query.flag & QUERY_CODE)
 		SetCode(query.code);

@@ -110,6 +110,7 @@ private:
 public:
 	irr::video::ITexture* tCover[2];
 	irr::video::ITexture* tUnknown;
+	irr::video::ITexture* tCenter;
 #define A(what) \
 		public: \
 		irr::video::ITexture* what;\

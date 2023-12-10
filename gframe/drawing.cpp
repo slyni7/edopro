@@ -376,9 +376,11 @@ void Game::DrawCard(ClientCard* pcard) {
 		matManager.mCard.setTexture(0, imageManager.GetTextureCard(pcard->code, imgType::ART));
 		driver->setMaterial(matManager.mCard);
 		driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);
-		/*matManager.mCard.setTexture(0, imageManager.GetTextureCard(46448937, imgType::ART));
-		driver->setMaterial(matManager.mCard);
-		driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);*/
+		if ((pcard->type & TYPE_TOKEN) && !(gDataManager->GetCardData(pcard->code)->type & TYPE_TOKEN)) {
+			matManager.mCard.setTexture(0, imageManager.GetTextureCard(46448937, imgType::ART));
+			driver->setMaterial(matManager.mCard);
+			driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);
+		}
 	}
 	if(m22 < 0.99 || pcard->is_moving) {
 		auto txt = imageManager.GetTextureCard(pcard->cover, imgType::COVER);
@@ -422,6 +424,26 @@ void Game::DrawCard(ClientCard* pcard) {
 		driver->setMaterial(matManager.mTexture);
 		driver->drawVertexPrimitiveList(matManager.vNegate, 4, matManager.iRectangle, 2);
 	}
+	bool design0 = false;
+	bool design1 = false;
+	for (auto dcode : dField.callbg_codes0) {
+		if (dcode == pcard->code)
+			design0 = true;
+	}
+	for (auto dcode : dField.callbg_codes1) {
+		if (dcode == pcard->code)
+			design0 = true;
+	}
+	for (auto dcode : dField.crossd_codes) {
+		if (dcode == pcard->code)
+			design1 = true;
+	}
+	if ((design0 && (pcard->location & (LOCATION_MZONE | LOCATION_HAND | LOCATION_GRAVE | LOCATION_REMOVED)))
+		|| (design1 && (pcard->location & (LOCATION_ONFIELD | LOCATION_HAND | LOCATION_GRAVE | LOCATION_REMOVED)))){
+		matManager.mTexture.setTexture(0, imageManager.tNegated);
+		driver->setMaterial(matManager.mTexture);
+		driver->drawVertexPrimitiveList(matManager.vNegate, 4, matManager.iRectangle, 2);
+	}
 	if(pcard->is_moving)
 		return;
 	if(pcard->cmdFlag & COMMAND_ATTACK) {
@@ -451,6 +473,9 @@ __forceinline void DrawShadowText(irr::gui::CGUITTFont* font, const T& text, con
 	DrawShadowTextPos(font, text, shadowposition, position, std::forward<Args>(args)...);
 }
 void Game::DrawMisc() {
+	static float selFieldAlpha2 = 255;
+	static float selFieldDAlpha2 = -10;
+
 	const float twoPI = 2.0f * irr::core::PI;
 	static float act_rot = 0.0f;
 	//pre expanded version of setRotationRadians, we're only setting the z value, saves computations
@@ -502,6 +527,16 @@ void Game::DrawMisc() {
 			(matManager.vFieldContiAct[three_columns][0].Y + matManager.vFieldContiAct[three_columns][2].Y) / 2, 0.03f));
 		driver->setTransform(irr::video::ETS_WORLD, im);
 		driver->drawVertexPrimitiveList(matManager.vActivate, 4, matManager.iRectangle, 2);
+	}
+
+	if (imageManager.tCenter) {
+		irr::core::vector3df pos = irr::core::vector3df(3.95f, 0.0f, 0.01f);
+		im.setRotationRadians(irr::core::vector3df(0, 0, 0));
+		im.setTranslation(pos);
+		driver->setTransform(irr::video::ETS_WORLD, im);
+		matManager.mCenter.setTexture(0, imageManager.tCenter);
+		driver->setMaterial(matManager.mCenter);
+		driver->drawVertexPrimitiveList(matManager.vCardCenter, 4, matManager.iRectangle, 2);
 	}
 
 	matManager.mTRTexture.AmbientColor = skin::DUELFIELD_CHAIN_COLOR_VAL;
@@ -634,7 +669,7 @@ void Game::DrawMisc() {
 				DrawStatus(pcard);
 		}
 		/*rikka cross test*/
-		for (size_t i = 0; i < 5; ++i) {
+		for (size_t i = 0; i < 6; ++i) {
 			pcard = dField.szone[p][i];
 			if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP))
 				&& ((pcard->position == POS_FACEUP_ATTACK) || (pcard->position == POS_FACEUP_DEFENSE)))
@@ -656,6 +691,34 @@ void Game::DrawMisc() {
 			DrawStackIndicator(gDataManager->GetNumString(dField.grave[p].size()), matManager.getGrave()[p], (p == 1));
 		if (dField.remove[p].size())
 			DrawStackIndicator(gDataManager->GetNumString(dField.remove[p].size()), matManager.getRemove()[p], (p == 1));
+	}
+	auto setAlpha = [](irr::video::SMaterial& material, const irr::video::SColor& color) {
+		uint32_t endalpha = std::round(color.getAlpha() * (selFieldAlpha2 - 5.0) * (0.005));
+		material.DiffuseColor = endalpha << 24;
+		material.AmbientColor = color;
+	};
+	driver->setTransform(irr::video::ETS_WORLD, irr::core::IdentityMatrix);
+	setAlpha(matManager.mImpInfField, skin::DUELFIELD_IMPINF_VAL);
+	selFieldAlpha2 += selFieldDAlpha2 * (float)delta_time * 60.0f / 1000.0f;
+	if (selFieldAlpha2 <= 5) {
+		selFieldAlpha2 = 5;
+		selFieldDAlpha2 = 10;
+	}
+	if (selFieldAlpha2 >= 205) {
+		selFieldAlpha2 = 205;
+		selFieldDAlpha2 = -10;
+	}
+	driver->setMaterial(matManager.mImpInfField);
+	for (int z = 0; z < 32; z++) {
+		if (dField.infimp_field & (1 << z)) {
+			if (z & 0x8) {
+				int pla = 0;
+				if (z & 0x10)
+					pla = 1;
+				int seq = z & 0x7;
+				driver->drawVertexPrimitiveList(&matManager.getSzone()[pla][seq], 4, matManager.iRectangle, 2);
+			}
+		}
 	}
 }
 /*

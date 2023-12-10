@@ -1483,6 +1483,23 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 			mainGame->dField.selectable_field = data;
 			mainGame->WaitFrameSignal(40, lock);
 			mainGame->dField.selectable_field = 0;
+			for (int ct = 0; ct < mainGame->dField.chains.size(); ct++) {
+				ChainInfo chain = mainGame->dField.chains[ct];
+				if (chain.solved) {
+					ClientCard* card = chain.chain_card;
+					if (card->code == 10045474) {
+						if (!(card->status & STATUS_ACT_FROM_HAND)
+							&& (card->location == LOCATION_SZONE)) {
+							int seq = card->sequence;
+							int con = card->controler;
+							mainGame->dField.infimp_field |=
+							(1 << (8 + ((con << 4) + seq))) | (1 << (8 + ((1 - con) << 4) + (4 - seq)));
+							break;
+						}
+					}
+					break;
+				}
+			}
 			break;
 		}
 		case HINT_SKILL: {
@@ -2885,6 +2902,12 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		/*const auto player = */mainGame->LocalPlayer(BufferIO::Read<uint8_t>(pbuf));
 		auto lock = LockIf();
 		mainGame->dInfo.turn++;
+		mainGame->dField.infimp_field = 0;
+		mainGame->dField.callbg_codes0.clear();
+		for (auto dcode : mainGame->dField.callbg_codes1)
+			mainGame->dField.callbg_codes0.push_back(dcode);
+		mainGame->dField.callbg_codes1.clear();
+		mainGame->dField.crossd_codes.clear();
 		if(!mainGame->dInfo.isReplay && !mainGame->dInfo.isSingleMode && mainGame->dInfo.player_type < (mainGame->dInfo.team1 + mainGame->dInfo.team2)) {
 			mainGame->btnLeaveGame->setText(gDataManager->GetSysString(1351).data());
 			mainGame->btnLeaveGame->setVisible(true);
@@ -3008,6 +3031,21 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 				Play(SoundManager::SFX::DESTROYED);
 			else if (current.location & LOCATION_REMOVED)
 				Play(SoundManager::SFX::BANISHED);
+		}
+		if (current.location == LOCATION_REMOVED) {
+			for (int ct = 0; ct < mainGame->dField.chains.size(); ct++) {
+				ChainInfo chain = mainGame->dField.chains[ct];
+				if (chain.solved) {
+					ClientCard* card = chain.chain_card;
+					if (card->code == 24224830) {
+						mainGame->dField.callbg_codes1.push_back(code);
+					}
+					if (card->code == 65681983) {
+						mainGame->dField.crossd_codes.push_back(code);
+					}
+					break;
+				}
+			}
 		}
 		auto lock = LockIf();
 		if (previous.location == 0) {
@@ -3379,23 +3417,42 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 	case MSG_CHAIN_SOLVING: {
 		const auto ct = BufferIO::Read<uint8_t>(pbuf);
 		auto lock = LockIf();
-		if(!mainGame->dInfo.isCatchingUp) {
-			if(mainGame->dField.last_chain)
+		if (!mainGame->dInfo.isCatchingUp) {
+			if (mainGame->dField.last_chain)
 				mainGame->WaitFrameSignal(11, lock);
-			for(int i = 0; i < 5; ++i) {
+			for (int i = 0; i < 5; ++i) {
 				mainGame->dField.chains[ct - 1].solved = false;
 				mainGame->WaitFrameSignal(3, lock);
 				mainGame->dField.chains[ct - 1].solved = true;
 				mainGame->WaitFrameSignal(3, lock);
 			}
-		} else {
+		}
+		else {
 			mainGame->dField.chains[ct - 1].solved = true;
 		}
 		mainGame->dField.last_chain = false;
 		return true;
 	}
 	case MSG_CHAIN_SOLVED: {
-		/*const auto ct = BufferIO::Read<uint8_t>(pbuf);*/
+		/*const auto ct = BufferIO::Read<uint8_t>(pbuf);
+		ChainInfo chain = mainGame->dField.chains[ct - 1];
+		ClientCard* card = chain.chain_card;
+		if ((card->code == 10045474) && mainGame->dField.infimp_check) {
+			if (!(card->status & STATUS_ACT_FROM_HAND)
+				&& (card->location == LOCATION_SZONE)) {
+				for (const auto target : chain.target) {
+					if ((target->status & STATUS_DISABLED)
+						&& (target->location == LOCATION_MZONE)) {
+						int seq = card->sequence;
+						int con = card->controler;
+						mainGame->dField.infimp_field |=
+							(1 << (8 + ((con << 4) + seq))) | (1 << (8 + ((1 - con) << 4) + (4 - seq)));
+						break;
+					}
+				}
+			}
+		}
+		mainGame->dField.infimp_check = false;*/
 		return true;
 	}
 	case MSG_CHAIN_END: {

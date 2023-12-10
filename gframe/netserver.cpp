@@ -398,6 +398,10 @@ void NetServer::HandleCTOSPacket(DuelPlayer* dp, uint8_t* data, uint32_t len) {
 	case CTOS_SURRENDER: {
 		if(!duel_mode)
 			break;
+		/*for (auto& us : users) {
+			if (us.second.type == 1 - dp->type)
+				duel_mode->Surrender(&us.second);
+		}*/
 		duel_mode->Surrender(dp);
 		break;
 	}

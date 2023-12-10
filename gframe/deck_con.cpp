@@ -88,6 +88,7 @@ void DeckBuilder::Initialize(bool refresh) {
 	mainGame->btnHandTest->setVisible(true);
 	mainGame->btnHandTestSettings->setVisible(true);
 	mainGame->btnYdkeManage->setVisible(true);
+	mainGame->wCardSelect->setVisible(false);
 	filterList = &gdeckManager->_lfList[mainGame->cbDBLFList->getSelected()];
 	if(refresh) {
 		ClearSearch();

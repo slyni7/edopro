@@ -37,6 +37,7 @@
 #include <IGUIContextMenu.h>
 #include <IGUITabControl.h>
 #include <IGUIScrollBar.h>
+#include <IGUIImage.h>
 #include "joystick_wrapper.h"
 #include "porting.h"
 #include "config.h"
@@ -557,14 +558,48 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			}
 			case BUTTON_CMD_ATTACK: {
 				mainGame->wCmdMenu->setVisible(false);
-				if(!clicked_card)
-					break;
-				for(size_t i = 0; i < attackable_cards.size(); ++i) {
-					if(attackable_cards[i] == clicked_card) {
-						DuelClient::SetResponseI((static_cast<uint32_t>(i) << 16) + 1);
-						DuelClient::SendResponse();
+				if (!list_command) {
+					if (!clicked_card)
+						break;
+					for (size_t i = 0; i < attackable_cards.size(); ++i) {
+						if (attackable_cards[i] == clicked_card) {
+							DuelClient::SetResponseI((static_cast<uint32_t>(i) << 16) + 1);
+							DuelClient::SendResponse();
+							break;
+						}
+					}
+				}
+				else {
+					selectable_cards.clear();
+					switch (command_location) {
+					case LOCATION_DECK: {
+						for (size_t i = 0; i < deck[command_controler].size(); ++i)
+							if (deck[command_controler][i]->cmdFlag & COMMAND_ATTACK)
+								selectable_cards.push_back(deck[command_controler][i]);
 						break;
 					}
+					case LOCATION_GRAVE: {
+						for (size_t i = 0; i < grave[command_controler].size(); ++i)
+							if (grave[command_controler][i]->cmdFlag & COMMAND_ATTACK)
+								selectable_cards.push_back(grave[command_controler][i]);
+						break;
+					}
+					case LOCATION_REMOVED: {
+						for (size_t i = 0; i < remove[command_controler].size(); ++i)
+							if (remove[command_controler][i]->cmdFlag & COMMAND_ATTACK)
+								selectable_cards.push_back(remove[command_controler][i]);
+						break;
+					}
+					case LOCATION_EXTRA: {
+						for (size_t i = 0; i < extra[command_controler].size(); ++i)
+							if (extra[command_controler][i]->cmdFlag & COMMAND_ATTACK)
+								selectable_cards.push_back(extra[command_controler][i]);
+						break;
+					}
+					}
+					list_command = COMMAND_ATTACK;
+					mainGame->wCardSelect->setText(gDataManager->GetSysString(502).data());
+					ShowSelectCard(true, true);
 				}
 				break;
 			}
@@ -658,6 +693,15 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						command_card = selectable_cards[id - BUTTON_CARD_0 + mainGame->scrCardList->getPos() / 10];
 						int index = 0;
 						while(spsummonable_cards[index] != command_card) index++;
+						DuelClient::SetResponseI((index << 16) + 1);
+						mainGame->HideElement(mainGame->wCardSelect, true);
+						ShowCancelOrFinishButton(0);
+						break;
+					}
+					if (list_command == COMMAND_ATTACK) {
+						command_card = selectable_cards[id - BUTTON_CARD_0 + mainGame->scrCardList->getPos() / 10];
+						int index = 0;
+						while (attackable_cards[index] != command_card) index++;
 						DuelClient::SetResponseI((index << 16) + 1);
 						mainGame->HideElement(mainGame->wCardSelect, true);
 						ShowCancelOrFinishButton(0);
@@ -913,6 +957,16 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 			}
 			case SCROLL_CARD_SELECT: {
 				int pos = mainGame->scrCardList->getPos() / 10;
+				size_t startpos;
+				size_t ct;
+				if (selectable_cards.size() <= 5) {
+					startpos = 30 + 125 * (5 - selectable_cards.size()) / 2;
+					ct = selectable_cards.size();
+				}
+				else {
+					startpos = 30;
+					ct = 5;
+				}
 				for(int i = 0; i < 5; ++i) {
 					auto& curcard = selectable_cards[i + pos];
 					auto& curstring = mainGame->stCardPos[i];
@@ -972,11 +1026,43 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 						else
 							curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
 					}
+					bool design0 = false;
+					bool design1 = false;
+					for (auto dcode : mainGame->dField.callbg_codes0) {
+						if (dcode == curcard->code)
+							design0 = true;
+					}
+					for (auto dcode : mainGame->dField.callbg_codes1) {
+						if (dcode == curcard->code)
+							design0 = true;
+					}
+					for (auto dcode : mainGame->dField.crossd_codes) {
+						if (dcode == curcard->code)
+							design1 = true;
+					}
+					if (design0 || design1) {
+						mainGame->iSelectNegate[i]->setImage(mainGame->imageManager.tNegated);
+						mainGame->iSelectNegate[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + 10 + i * 125), 90, static_cast<irr::s32>(startpos + 110 + i * 125), 190));
+						mainGame->iSelectNegate[i]->setVisible(true);
+					}
+					else {
+						mainGame->iSelectNegate[i]->setVisible(false);
+					}
 				}
 				break;
 			}
 			case SCROLL_CARD_DISPLAY: {
 				int pos = mainGame->scrDisplayList->getPos() / 10;
+				size_t startpos;
+				size_t ct;
+				if (selectable_cards.size() <= 5) {
+					startpos = 30 + 125 * (5 - selectable_cards.size()) / 2;
+					ct = selectable_cards.size();
+				}
+				else {
+					startpos = 30;
+					ct = 5;
+				}
 				for(int i = 0; i < 5; ++i) {
 					auto& curcard = display_cards[i + pos];
 					auto& curstring = mainGame->stDisplayPos[i];
@@ -1016,6 +1102,28 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 							curstring->setBackgroundColor(skin::DUELFIELD_CARD_OPPONENT_WINDOW_BACKGROUND_VAL);
 						else
 							curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
+					}
+					bool design0 = false;
+					bool design1 = false;
+					for (auto dcode : mainGame->dField.callbg_codes0) {
+						if (dcode == curcard->code)
+							design0 = true;
+					}
+					for (auto dcode : mainGame->dField.callbg_codes1) {
+						if (dcode == curcard->code)
+							design0 = true;
+					}
+					for (auto dcode : mainGame->dField.crossd_codes) {
+						if (dcode == curcard->code)
+							design1 = true;
+					}
+					if (design0 || design1) {
+						mainGame->iSelectNegate[i]->setImage(mainGame->imageManager.tNegated);
+						mainGame->iSelectNegate[i]->setRelativePosition(mainGame->Scale<irr::s32>(static_cast<irr::s32>(startpos + 10 + i * 125), 90, static_cast<irr::s32>(startpos + 110 + i * 125), 190));
+						mainGame->iSelectNegate[i]->setVisible(true);
+					}
+					else {
+						mainGame->iSelectNegate[i]->setVisible(false);
 					}
 				}
 				break;
@@ -1718,13 +1826,14 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 	}
 	case irr::EET_KEY_INPUT_EVENT: {
 		switch(event.KeyInput.Key) {
-		case irr::KEY_KEY_T: {
+		/*temp erase*/
+		/*case irr::KEY_KEY_T: {
 			if (clock() > mainGame->one_card + 1000) {
 				mainGame->one_card = clock();
 				DuelClient::SendPacketToServer(CTOS_ONE_CARD);
 			}
 			break;
-		}
+		}*/
 		/*test*/
 		/*case irr::KEY_LEFT: {
 			DuelClient::SendPacketToServer(CTOS_DIRECTION_TEST, (uint8_t)0);
