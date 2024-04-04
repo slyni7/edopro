@@ -30,6 +30,7 @@ Materials::Materials() {
 	SetS3DVertex(vCardOutline, -0.375f, -0.54f, 0.37f, 0.54f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardOutliner, 0.37f, -0.54f, -0.375f, 0.54f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardBack, 0.35f, -0.5f, -0.35f, 0.5f, 0, -1, 0, 0, 1, 1);
+	SetS3DVertex(vSquareFront, -0.35f * 5 / 14, -0.5f * 5 / 14, 0.35f * 5 / 14, 0.5f * 5 / 14, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vSymbol, -0.35f, -0.35f, 0.35f, 0.35f, 0.01f, 1, 0, 0, 1, 1);
 	SetS3DVertex(vNegate, -0.25f, -0.28f, 0.25f, 0.22f, 0.01f, 1, 0, 0, 1, 1);
 	SetS3DVertex(vChainNum, -0.35f, -0.35f, 0.35f, 0.35f, 0, 1, 0, 0, 0.19375f, 0.2421875f);
@@ -199,6 +200,8 @@ Materials::Materials() {
 	iRectangle[4] = 1;
 	iRectangle[5] = 3;
 
+	SetS3DVertex(vSomewhere, 19.9f, 19.9f, 20.7f, 21.1f, 0, 1, 0, 0, 0, 0);
+
 	SetS3DVertex(vFieldDeck[0][0], 6.9f, 2.7f, 7.7f, 3.9f, 0, 1, 0, 0, 0, 0);
 	SetS3DVertex(vFieldDeck[1][0], 5.8f, 2.7f, 6.6f, 3.9f, 0, 1, 0, 0, 0, 0);
 	//grave
@@ -216,6 +219,12 @@ Materials::Materials() {
 	//speed duel remove
 	SetS3DVertex(vFieldRemove[0][1][0], 6.8f, 0.1f, 7.6f, 1.3f, 0, 1, 0, 0, 0, 0);
 	SetS3DVertex(vFieldRemove[1][1][0], 5.8f, 0.1f, 6.6f, 1.3f, 0, 1, 0, 0, 0, 0);
+	for (int i = 0; i < 14; ++i) {
+		for (int j = 0; j < 14; ++j) {
+			SetS3DVertex(vFieldSquare[0][i + j * 14], 1.2f + i * (5.5f / 14), 3.2f - (j + 1) * (6.4f / 14), 1.2f + (i + 1) * (5.5f / 14), 3.2f - j * (6.4f / 14), 0, 1, 0, 0, 0, 0);
+			SetS3DVertex(vFieldSquare[1][i + j * 14], 6.7f - i * (5.5f / 14), -3.2f + (j + 1) * (6.4f / 14), 6.7f - (i + 1) * (5.5f / 14), -3.2f + j * (6.4f / 14), 0, 1, 0, 0, 0, 0);
+		}
+	}
 	for(int i = 0; i < 5; ++i)
 		SetS3DVertex(vFieldMzone[0][i], 1.2f + i * 1.1f, 0.8f, 2.3f + i * 1.1f, 2.0f, 0, 1, 0, 0, 0, 0);
 	SetS3DVertex(vFieldMzone[0][5], 2.3f, -0.6f, 3.4f, 0.6f, 0, 1, 0, 0, 0, 0);
@@ -367,6 +376,66 @@ Materials::Materials() {
 	mImpInfField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
 	mImpInfField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
 	ENABLE_ZWRITE(mImpInfField);
+	mAttFireField.ColorMaterial = irr::video::ECM_NONE;
+	mAttFireField.AmbientColor = 0xffffffff;
+	mAttFireField.DiffuseColor = 0xff000000;
+	mAttFireField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttFireField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttFireField);
+	mAttEarthField.ColorMaterial = irr::video::ECM_NONE;
+	mAttEarthField.AmbientColor = 0xffffffff;
+	mAttEarthField.DiffuseColor = 0xff000000;
+	mAttEarthField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttEarthField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttEarthField);
+	mAttLightField.ColorMaterial = irr::video::ECM_NONE;
+	mAttLightField.AmbientColor = 0xffffffff;
+	mAttLightField.DiffuseColor = 0xff000000;
+	mAttLightField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttLightField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttLightField);
+	mAttWindField.ColorMaterial = irr::video::ECM_NONE;
+	mAttWindField.AmbientColor = 0xffffffff;
+	mAttWindField.DiffuseColor = 0xff000000;
+	mAttWindField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttWindField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttWindField);
+	mAttWaterField.ColorMaterial = irr::video::ECM_NONE;
+	mAttWaterField.AmbientColor = 0xffffffff;
+	mAttWaterField.DiffuseColor = 0xff000000;
+	mAttWaterField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttWaterField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttWaterField);
+	mAttDarkField.ColorMaterial = irr::video::ECM_NONE;
+	mAttDarkField.AmbientColor = 0xffffffff;
+	mAttDarkField.DiffuseColor = 0xff000000;
+	mAttDarkField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttDarkField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttDarkField);
+	mAttDivineField.ColorMaterial = irr::video::ECM_NONE;
+	mAttDivineField.AmbientColor = 0xffffffff;
+	mAttDivineField.DiffuseColor = 0xff000000;
+	mAttDivineField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mAttDivineField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mAttDivineField);
+	mTypeSpellField.ColorMaterial = irr::video::ECM_NONE;
+	mTypeSpellField.AmbientColor = 0xffffffff;
+	mTypeSpellField.DiffuseColor = 0xff000000;
+	mTypeSpellField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mTypeSpellField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mTypeSpellField);
+	mTypeTrapField.ColorMaterial = irr::video::ECM_NONE;
+	mTypeTrapField.AmbientColor = 0xffffffff;
+	mTypeTrapField.DiffuseColor = 0xff000000;
+	mTypeTrapField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mTypeTrapField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mTypeTrapField);
+	mSquareBlackField.ColorMaterial = irr::video::ECM_NONE;
+	mSquareBlackField.AmbientColor = 0xffffffff;
+	mSquareBlackField.DiffuseColor = 0xff000000;
+	mSquareBlackField.MaterialType = irr::video::EMT_ONETEXTURE_BLEND;
+	mSquareBlackField.MaterialTypeParam = pack_textureBlendFunc(irr::video::EBF_SRC_ALPHA, irr::video::EBF_ONE_MINUS_SRC_ALPHA, irr::video::EMFN_MODULATE_1X, irr::video::EAS_VERTEX_COLOR);
+	ENABLE_ZWRITE(mSquareBlackField);
 	mOutLine.ColorMaterial = irr::video::ECM_AMBIENT;
 	mOutLine.DiffuseColor = 0xff000000;
 	mOutLine.Thickness = 2;

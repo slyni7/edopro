@@ -20,6 +20,7 @@ public:
 	QuadVertex vCardOutline;
 	QuadVertex vCardOutliner;
 	QuadVertex vCardBack;
+	QuadVertex vSquareFront;
 	QuadVertex vSymbol;
 	QuadVertex vNegate;
 	QuadVertex vChainNum;
@@ -30,6 +31,8 @@ public:
 	QuadVertex vFieldSpell2[2];
 	//irr::video::S3DVertex vBackLine[76];
 	QuadVertex vFieldMzone[2][7];
+	QuadVertex vFieldSquare[2][196];
+	QuadVertex vSomewhere;
 //vs2015's array's const operator[] loses the type information if built with _ITERATOR_DEBUG_LEVEL
 //return a non const reference to the array in that case, so that it uses the non const operator[]
 #if !defined(_MSC_VER) || _MSC_VER != 1900 || !defined(_ITERATOR_DEBUG_LEVEL) || _ITERATOR_DEBUG_LEVEL == 0
@@ -59,6 +62,16 @@ public:
 	irr::video::SMaterial mLinkedField;
 	irr::video::SMaterial mMutualLinkedField;
 	irr::video::SMaterial mImpInfField;
+	irr::video::SMaterial mAttFireField;
+	irr::video::SMaterial mAttEarthField;
+	irr::video::SMaterial mAttLightField;
+	irr::video::SMaterial mAttWindField;
+	irr::video::SMaterial mAttWaterField;
+	irr::video::SMaterial mAttDarkField;
+	irr::video::SMaterial mAttDivineField;
+	irr::video::SMaterial mTypeSpellField;
+	irr::video::SMaterial mTypeTrapField;
+	irr::video::SMaterial mSquareBlackField;
 	irr::video::SMaterial mTRTexture;
 	irr::video::SMaterial mATK;
 private:

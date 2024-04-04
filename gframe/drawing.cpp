@@ -170,10 +170,14 @@ void Game::DrawBackGround() {
 		selFieldAlpha = 205;
 		selFieldDAlpha = -10;
 	}
-	setAlpha(matManager.mSelField, skin::DUELFIELD_HOVERED_VAL);
+	//setAlpha(matManager.mSelField, skin::DUELFIELD_HOVERED_VAL);
+	setAlpha(matManager.mSelField, 0xffaaaaaa);
 	const irr::video::S3DVertex* vertex = nullptr;
 	if(dField.hovered_location == LOCATION_DECK)
 		vertex = matManager.getDeck()[dField.hovered_controler];
+	else if (dField.hovered_location == LOCATION_SQUARE) {
+		vertex = matManager.vFieldSquare[0][dField.hovered_sequence];
+	}
 	else if(dField.hovered_location == LOCATION_MZONE) {
 		vertex = matManager.vFieldMzone[dField.hovered_controler][dField.hovered_sequence];
 		ClientCard* pcard = dField.mzone[dField.hovered_controler][dField.hovered_sequence];
@@ -372,10 +376,14 @@ void Game::DrawCard(ClientCard* pcard) {
 	matManager.mCard.DiffuseColor = ((int)std::round(pcard->curAlpha) << 24) | 0xffffff;
 	driver->setTransform(irr::video::ETS_WORLD, pcard->mTransform);
 	auto m22 = pcard->mTransform(2, 2);
+	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	if(m22 > -0.99 || pcard->is_moving) {
 		matManager.mCard.setTexture(0, imageManager.GetTextureCard(pcard->code, imgType::ART));
 		driver->setMaterial(matManager.mCard);
-		driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);
+		if (sqf && (pcard->location & (LOCATION_MZONE | LOCATION_OVERLAY)))
+			driver->drawVertexPrimitiveList(matManager.vSquareFront, 4, matManager.iRectangle, 2);
+		else
+			driver->drawVertexPrimitiveList(matManager.vCardFront, 4, matManager.iRectangle, 2);
 		if ((pcard->type & TYPE_TOKEN) && !(gDataManager->GetCardData(pcard->code)->type & TYPE_TOKEN)) {
 			matManager.mCard.setTexture(0, imageManager.GetTextureCard(46448937, imgType::ART));
 			driver->setMaterial(matManager.mCard);
@@ -662,18 +670,21 @@ void Game::DrawMisc() {
 
 	ClientCard* pcard;
 	const size_t pzones[]{ dInfo.GetPzoneIndex(0), dInfo.GetPzoneIndex(1) };
+	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	for (size_t p = 0; p < 2; ++p) {
-		for (size_t i = 0; i < 7; ++i) {
-			pcard = dField.mzone[p][i];
-			if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP)))
-				DrawStatus(pcard);
-		}
-		/*rikka cross test*/
-		for (size_t i = 0; i < 6; ++i) {
-			pcard = dField.szone[p][i];
-			if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP))
-				&& ((pcard->position == POS_FACEUP_ATTACK) || (pcard->position == POS_FACEUP_DEFENSE)))
-				DrawStatus(pcard);
+		if (!sqf) {
+			for (size_t i = 0; i < 7; ++i) {
+				pcard = dField.mzone[p][i];
+				if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP)))
+					DrawStatus(pcard);
+			}
+			/*rikka cross test*/
+			for (size_t i = 0; i < 6; ++i) {
+				pcard = dField.szone[p][i];
+				if (pcard && pcard->code != 0 && (p == 0 || (pcard->position & POS_FACEUP))
+					&& ((pcard->position == POS_FACEUP_ATTACK) || (pcard->position == POS_FACEUP_DEFENSE)))
+					DrawStatus(pcard);
+			}
 		}
 		// Draw pendulum scales
 		for (const auto pzone : pzones) {
@@ -692,13 +703,245 @@ void Game::DrawMisc() {
 		if (dField.remove[p].size())
 			DrawStackIndicator(gDataManager->GetNumString(dField.remove[p].size()), matManager.getRemove()[p], (p == 1));
 	}
-	auto setAlpha = [](irr::video::SMaterial& material, const irr::video::SColor& color) {
+	/*auto setAlpha = [](irr::video::SMaterial& material, const irr::video::SColor& color) {
 		uint32_t endalpha = std::round(color.getAlpha() * (selFieldAlpha2 - 5.0) * (0.005));
+		material.DiffuseColor = endalpha << 24;
+		material.AmbientColor = color;
+	};*/
+	auto setAlpha = [](irr::video::SMaterial& material, const irr::video::SColor& color) {
+		uint32_t endalpha = std::round(color.getAlpha() * (1 - ((selFieldAlpha2 - 5.0) * (0.005) / 2)));
 		material.DiffuseColor = endalpha << 24;
 		material.AmbientColor = color;
 	};
 	driver->setTransform(irr::video::ETS_WORLD, irr::core::IdentityMatrix);
 	setAlpha(matManager.mImpInfField, skin::DUELFIELD_IMPINF_VAL);
+	if (sqf) {
+		setAlpha(matManager.mAttFireField, skin::DUELFIELD_ATTRIBUTE_FIRE_VAL);
+		setAlpha(matManager.mAttEarthField, skin::DUELFIELD_ATTRIBUTE_EARTH_VAL);
+		setAlpha(matManager.mAttLightField, skin::DUELFIELD_ATTRIBUTE_LIGHT_VAL);
+		setAlpha(matManager.mAttWindField, skin::DUELFIELD_ATTRIBUTE_WIND_VAL);
+		setAlpha(matManager.mAttWaterField, skin::DUELFIELD_ATTRIBUTE_WATER_VAL);
+		setAlpha(matManager.mAttDarkField, skin::DUELFIELD_ATTRIBUTE_DARK_VAL);
+		setAlpha(matManager.mTypeSpellField, skin::DUELFIELD_TYPE_SPELL_VAL);
+		setAlpha(matManager.mTypeTrapField, skin::DUELFIELD_TYPE_TRAP_VAL);
+		setAlpha(matManager.mAttDivineField, skin::DUELFIELD_ATTRIBUTE_DIVINE_VAL);
+		setAlpha(matManager.mSquareBlackField, 0xff000000);
+		setAlpha(matManager.mSelField, 0xffaaaaaa);
+		ClientCard* pcard0 = dField.mzone[0][0];
+		ClientCard* pcard1 = dField.mzone[1][0];
+		driver->setMaterial(matManager.mAttFireField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448939))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448939))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttEarthField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448940))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448940))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttLightField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448941))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448941))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttWindField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448942))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448942))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttWaterField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448943))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448943))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttDarkField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448944))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448944))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mTypeSpellField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448945))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448945))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mTypeTrapField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448946))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448946))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mAttDivineField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448947))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448947))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mSquareBlackField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448948))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && (ocard->code == 46448948))
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+		driver->setMaterial(matManager.mSelField);
+		if (pcard0) {
+			for (int z = 0; z < pcard0->overlayed.size(); z++) {
+				ClientCard* ocard = pcard0->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && ocard->is_selected)
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
+			}
+		}
+		else if (pcard1) {
+			for (int z = 0; z < pcard1->overlayed.size(); z++) {
+				ClientCard* ocard = pcard1->overlayed[z];
+				if (z >= 196)
+					break;
+				if (ocard && ocard->is_selected)
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+			}
+		}
+	}
+	/*setAlpha(matManager.mAttDivineField, skin::DUELFIELD_ATTRIBUTE_DIVINE_VAL);
+	setAlpha(matManager.mTypeSpellField, skin::DUELFIELD_TYPE_SPELL_VAL);
+	setAlpha(matManager.mTypeTrapField, skin::DUELFIELD_TYPE_TRAP_VAL);*/
 	selFieldAlpha2 += selFieldDAlpha2 * (float)delta_time * 60.0f / 1000.0f;
 	if (selFieldAlpha2 <= 5) {
 		selFieldAlpha2 = 5;
@@ -720,6 +963,115 @@ void Game::DrawMisc() {
 			}
 		}
 	}
+	/*driver->setMaterial(matManager.mAttFireField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_FIRE))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttEarthField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_EARTH))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttLightField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_LIGHT))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttWindField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_WIND))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttWaterField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_WATER))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttDarkField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_DARK))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mAttDivineField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 7; s++) {
+
+			pcard = dField.mzone[p][s];
+			if (pcard && pcard->code && (pcard->attribute & ATTRIBUTE_DIVINE))
+				driver->drawVertexPrimitiveList(&matManager.vFieldMzone[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mTypeSpellField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 6; s++) {
+
+			pcard = dField.szone[p][s];
+			if (pcard && pcard->code && (pcard->type & TYPE_SPELL))
+				driver->drawVertexPrimitiveList(&matManager.getSzone()[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}
+	driver->setMaterial(matManager.mTypeTrapField);
+	for (int p = 0; p < 2; p++) {
+
+		for (int s = 0; s < 6; s++) {
+
+			pcard = dField.szone[p][s];
+			if (pcard && pcard->code && (pcard->type & TYPE_TRAP))
+				driver->drawVertexPrimitiveList(&matManager.getSzone()[p][s], 4, matManager.iRectangle, 2);
+
+		}
+
+	}*/
+
 }
 /*
 Draws the stats of a card based on its relative position

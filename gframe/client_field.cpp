@@ -856,10 +856,25 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 	const int& controler = pcard->overlayTarget ? pcard->overlayTarget->controler : pcard->controler;
 	const int& sequence = pcard->sequence;
 	const int& location = pcard->location;
+	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	auto GetPos = [&]()->const irr::video::S3DVertex* {
 		switch(location) {
 		case LOCATION_DECK:		return matManager.getDeck()[controler];
-		case LOCATION_MZONE:	return matManager.vFieldMzone[controler][sequence];
+		case LOCATION_MZONE:
+			if (sqf) {
+				if (sequence == 1) {
+					const int& atk = pcard->attack;
+					if (atk >= 196)
+						return matManager.vSomewhere;
+					else if (atk < 0)
+						return matManager.vSomewhere;
+					return matManager.vFieldSquare[controler][atk];
+				}
+				else
+					return matManager.vSomewhere;
+			}
+			else
+				return matManager.vFieldMzone[controler][sequence];
 		case LOCATION_SZONE:	return matManager.getSzone()[controler][sequence];
 		case LOCATION_GRAVE:	return matManager.getGrave()[controler];
 		case LOCATION_REMOVED:	return matManager.getRemove()[controler];
@@ -868,8 +883,22 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 		case LOCATION_OVERLAY:
 			if(!pcard->overlayTarget || controler > 1)
 				return nullptr;
-			if(pcard->overlayTarget->location == LOCATION_MZONE)
-				return matManager.vFieldMzone[controler][pcard->overlayTarget->sequence];
+			if (pcard->overlayTarget->location == LOCATION_MZONE) {
+				if (sqf) {
+					auto ocard = pcard->overlayTarget;
+					if ((ocard->sequence == 2) && (pcard->code != 46448938)) {
+						if (!ocard->controler) {
+							return matManager.vFieldSquare[0][sequence];
+						}
+						else {
+							return matManager.vFieldSquare[0][195 - sequence];
+						}
+					}
+					return matManager.vSomewhere;
+				}
+				else
+					return matManager.vFieldMzone[controler][pcard->overlayTarget->sequence];
+			}
 			if(pcard->overlayTarget->location == LOCATION_SZONE)
 				return matManager.getSzone()[controler][pcard->overlayTarget->sequence];
 			/*fallthrough*/
@@ -890,7 +919,7 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 			else
 				*r = (pcard->position & POS_DEFENSE) ? oppoDEF : oppoATK;
 		} else if (location == LOCATION_OVERLAY)
-			*r = (pcard->overlayTarget->controler == 0) ? selfATK : oppoATK;
+			*r = (pcard->overlayTarget->controler == 0 || sqf) ? selfATK : oppoATK;
 		else if (location == LOCATION_SZONE) {
 			if (controler == 0)
 				*r = !(pcard->position & POS_ATTACK) ? selfDEF : selfATK;
@@ -916,10 +945,12 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 				break;
 			}
 			case LOCATION_OVERLAY: {
-				if(controler == 0)
-					*t = { t->X - 0.12f + 0.06f * sequence, t->Y + 0.06f, 0.005f + pcard->sequence * 0.0001f };
-				else
-					*t = { t->X + 0.12f - 0.06f * sequence, t->Y - 0.06f, 0.005f + pcard->sequence * 0.0001f };
+				if (!sqf) {
+					if (controler == 0)
+						*t = { t->X - 0.12f + 0.06f * sequence, t->Y + 0.06f, 0.005f + pcard->sequence * 0.0001f };
+					else
+						*t = { t->X + 0.12f - 0.06f * sequence, t->Y - 0.06f, 0.005f + pcard->sequence * 0.0001f };
+				}
 				break;
 			}
 		}

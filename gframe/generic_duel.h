@@ -42,13 +42,13 @@ public:
 	void AfterParsing(const CoreUtils::Packet& packet, int& return_value, bool& record, bool& record_last);
 	void DuelEndProc();
 	void WaitforResponse(uint8_t player);
-	void RefreshMzone(uint8_t player, uint32_t flag = 0x3881fff);
+	void RefreshMzone(uint8_t player, uint32_t flag = 0x3891fff);
 	void RefreshSzone(uint8_t player, uint32_t flag = 0x3e81fff);
 	void RefreshHand(uint8_t player, uint32_t flag = 0x3781fff);
 	void RefreshGrave(uint8_t player, uint32_t flag = 0x381fff);
 	void RefreshExtra(uint8_t player, uint32_t flag = 0x381fff);
 	void RefreshLocation(uint8_t player, uint32_t flag, uint8_t location);
-	void RefreshSingle(uint8_t player, uint8_t location, uint8_t sequence, uint32_t flag = 0x3f81fff);
+	void RefreshSingle(uint8_t player, uint8_t location, uint8_t sequence, uint32_t flag = 0x3f91fff);
 	
 	static void GenericTimer(evutil_socket_t fd, short events, void* arg);
 
