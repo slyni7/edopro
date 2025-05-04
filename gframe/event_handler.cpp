@@ -1278,7 +1278,7 @@ bool ClientField::OnEvent(const irr::SEvent& event) {
 				else {
 					ocard = GetCard(1, LOCATION_MZONE, 0);
 					if (ocard) {
-						clicked_card = ocard->overlayed[195 - hovered_sequence];
+						clicked_card = ocard->overlayed[MAP_WIDTH * MAP_HEIGHT - 1 - hovered_sequence];
 					}
 				}
 			}
@@ -2620,7 +2620,7 @@ bool CheckHand(const irr::core::vector2d<irr::s32>& mouse, const std::vector<Cli
 void ClientField::GetHoverField(const irr::core::vector2d<irr::s32>& mouse) {
 	const int three_columns = mainGame->dInfo.HasFieldFlag(DUEL_3_COLUMNS_FIELD);
 	const int not_separate_pzones = !mainGame->dInfo.HasFieldFlag(DUEL_SEPARATE_PZONE);
-	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
+	const int sqf = mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	if(CheckHand(mouse, hand[0])) {
 		hovered_controler = 0;
 		hovered_location = LOCATION_HAND;
@@ -2650,18 +2650,18 @@ void ClientField::GetHoverField(const irr::core::vector2d<irr::s32>& mouse) {
 			&& boardy >= -3.2 && boardy <= 3.2) {
 			int sqx = (boardx - matManager.vFieldSquare[0][0][0].Pos.X) / (matManager.vFieldSquare[0][0][1].Pos.X - matManager.vFieldSquare[0][0][0].Pos.X);
 			int sqy = (boardy - matManager.vFieldSquare[0][0][2].Pos.Y) / (matManager.vFieldSquare[0][0][0].Pos.Y - matManager.vFieldSquare[0][0][2].Pos.Y);
-			if (sqx >= 14)
-				sqx = 13;
-			if (sqy >= 14)
-				sqy = 13;
-			if ((sqx + 14 * sqy != 6 + 14 * 6)
-				&& (sqx + 14 * sqy != 6 + 14 * 7)
-				&& (sqx + 14 * sqy != 7 + 14 * 6)
-				&& (sqx + 14 * sqy != 7 + 14 * 7)
+			if (sqx >= MAP_WIDTH)
+				sqx = MAP_WIDTH - 1;
+			if (sqy >= MAP_HEIGHT)
+				sqy = MAP_HEIGHT - 1;
+			if ((sqx + MAP_WIDTH * sqy != 6 + MAP_WIDTH * 6)
+				&& (sqx + MAP_WIDTH * sqy != 6 + MAP_WIDTH * 7)
+				&& (sqx + MAP_WIDTH * sqy != 7 + MAP_WIDTH * 6)
+				&& (sqx + MAP_WIDTH * sqy != 7 + MAP_WIDTH * 7)
 				) {
 				hovered_controler = 0;
 				hovered_location = LOCATION_SQUARE;
-				hovered_sequence = sqx + 14 * sqy;
+				hovered_sequence = sqx + MAP_WIDTH * sqy;
 			}
 		}
 		else if(boardx >= matManager.getExtra()[0][0].Pos.X && boardx <= matManager.getExtra()[0][1].Pos.X) {

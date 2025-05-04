@@ -21,6 +21,9 @@
 #define OPERATION_FAIL 0
 #define OPERATION_CANCELED -1
 
+#define MAP_WIDTH		14
+#define MAP_HEIGHT		14
+
 //Locations
 #define LOCATION_DECK    0x01
 #define LOCATION_HAND    0x02

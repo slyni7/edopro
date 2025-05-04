@@ -1955,7 +1955,7 @@ int DuelClient::ClientAnalyze(const uint8_t* msg, uint32_t len) {
 		return false;
 	}
 	case MSG_SELECT_CARD: {
-		const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
+		const int sqf = mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 		/*uint8_t selecting_player = */BufferIO::Read<uint8_t>(pbuf);
 		mainGame->dField.select_cancelable = BufferIO::Read<uint8_t>(pbuf) != 0;
 		mainGame->dField.select_min = CompatRead<uint8_t, uint32_t>(pbuf);

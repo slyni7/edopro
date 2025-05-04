@@ -1175,7 +1175,7 @@ void GenericDuel::Sending(CoreUtils::Packet& packet, int& return_value, bool& re
 		SEND(nullptr);
 		for (auto& dueler : (pcon == 0) ? players.home : players.opposing)
 			NetServer::ReSendToPlayer(dueler);
-		if ((ploc == LOCATION_HAND) && (pque == QUERY_CODE)) {
+		if ((ploc & 0x43) && (pque == QUERY_CODE)) {
 			pbufw = pbuf;
 			/*;//test*/ BufferIO::Write<uint32_t>(pbufw, 0);
 		}

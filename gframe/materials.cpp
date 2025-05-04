@@ -30,7 +30,7 @@ Materials::Materials() {
 	SetS3DVertex(vCardOutline, -0.375f, -0.54f, 0.37f, 0.54f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardOutliner, 0.37f, -0.54f, -0.375f, 0.54f, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vCardBack, 0.35f, -0.5f, -0.35f, 0.5f, 0, -1, 0, 0, 1, 1);
-	SetS3DVertex(vSquareFront, -0.35f * 5 / 14, -0.5f * 5 / 14, 0.35f * 5 / 14, 0.5f * 5 / 14, 0, 1, 0, 0, 1, 1);
+	SetS3DVertex(vSquareFront, -0.35f * 5 / MAP_WIDTH, -0.5f * 5 / MAP_HEIGHT, 0.35f * 5 / MAP_WIDTH, 0.5f * 5 / MAP_HEIGHT, 0, 1, 0, 0, 1, 1);
 	SetS3DVertex(vSymbol, -0.35f, -0.35f, 0.35f, 0.35f, 0.01f, 1, 0, 0, 1, 1);
 	SetS3DVertex(vNegate, -0.25f, -0.28f, 0.25f, 0.22f, 0.01f, 1, 0, 0, 1, 1);
 	SetS3DVertex(vChainNum, -0.35f, -0.35f, 0.35f, 0.35f, 0, 1, 0, 0, 0.19375f, 0.2421875f);
@@ -219,10 +219,10 @@ Materials::Materials() {
 	//speed duel remove
 	SetS3DVertex(vFieldRemove[0][1][0], 6.8f, 0.1f, 7.6f, 1.3f, 0, 1, 0, 0, 0, 0);
 	SetS3DVertex(vFieldRemove[1][1][0], 5.8f, 0.1f, 6.6f, 1.3f, 0, 1, 0, 0, 0, 0);
-	for (int i = 0; i < 14; ++i) {
-		for (int j = 0; j < 14; ++j) {
-			SetS3DVertex(vFieldSquare[0][i + j * 14], 1.2f + i * (5.5f / 14), 3.2f - (j + 1) * (6.4f / 14), 1.2f + (i + 1) * (5.5f / 14), 3.2f - j * (6.4f / 14), 0, 1, 0, 0, 0, 0);
-			SetS3DVertex(vFieldSquare[1][i + j * 14], 6.7f - i * (5.5f / 14), -3.2f + (j + 1) * (6.4f / 14), 6.7f - (i + 1) * (5.5f / 14), -3.2f + j * (6.4f / 14), 0, 1, 0, 0, 0, 0);
+	for (int i = 0; i < MAP_WIDTH; ++i) {
+		for (int j = 0; j < MAP_HEIGHT; ++j) {
+			SetS3DVertex(vFieldSquare[0][i + j * MAP_HEIGHT], 1.2f + i * (5.5f / MAP_WIDTH), 3.2f - (j + 1) * (6.4f / MAP_HEIGHT), 1.2f + (i + 1) * (5.5f / MAP_WIDTH), 3.2f - j * (6.4f / MAP_HEIGHT), 0, 1, 0, 0, 0, 0);
+			SetS3DVertex(vFieldSquare[1][i + j * MAP_HEIGHT], 6.7f - i * (5.5f / MAP_WIDTH), -3.2f + (j + 1) * (6.4f / MAP_HEIGHT), 6.7f - (i + 1) * (5.5f / MAP_WIDTH), -3.2f + j * (6.4f / MAP_HEIGHT), 0, 1, 0, 0, 0, 0);
 		}
 	}
 	for(int i = 0; i < 5; ++i)

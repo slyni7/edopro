@@ -856,7 +856,7 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 	const int& controler = pcard->overlayTarget ? pcard->overlayTarget->controler : pcard->controler;
 	const int& sequence = pcard->sequence;
 	const int& location = pcard->location;
-	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
+	const int sqf = mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	auto GetPos = [&]()->const irr::video::S3DVertex* {
 		switch(location) {
 		case LOCATION_DECK:		return matManager.getDeck()[controler];
@@ -864,7 +864,7 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 			if (sqf) {
 				if (sequence == 1) {
 					const int& atk = pcard->attack;
-					if (atk >= 196)
+					if (atk >= MAP_WIDTH * MAP_HEIGHT)
 						return matManager.vSomewhere;
 					else if (atk < 0)
 						return matManager.vSomewhere;
@@ -891,7 +891,7 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 							return matManager.vFieldSquare[0][sequence];
 						}
 						else {
-							return matManager.vFieldSquare[0][195 - sequence];
+							return matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - sequence];
 						}
 					}
 					return matManager.vSomewhere;

@@ -376,7 +376,7 @@ void Game::DrawCard(ClientCard* pcard) {
 	matManager.mCard.DiffuseColor = ((int)std::round(pcard->curAlpha) << 24) | 0xffffff;
 	driver->setTransform(irr::video::ETS_WORLD, pcard->mTransform);
 	auto m22 = pcard->mTransform(2, 2);
-	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
+	const int sqf = mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	if(m22 > -0.99 || pcard->is_moving) {
 		matManager.mCard.setTexture(0, imageManager.GetTextureCard(pcard->code, imgType::ART));
 		driver->setMaterial(matManager.mCard);
@@ -670,7 +670,7 @@ void Game::DrawMisc() {
 
 	ClientCard* pcard;
 	const size_t pzones[]{ dInfo.GetPzoneIndex(0), dInfo.GetPzoneIndex(1) };
-	const int sqf = !mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
+	const int sqf = mainGame->dInfo.HasFieldFlag(DUEL_SQUARE_FANTASIA);
 	for (size_t p = 0; p < 2; ++p) {
 		if (!sqf) {
 			for (size_t i = 0; i < 7; ++i) {
@@ -733,7 +733,7 @@ void Game::DrawMisc() {
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448939))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -742,17 +742,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448939))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttEarthField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448940))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -761,17 +761,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448940))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttLightField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448941))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -780,17 +780,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448941))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttWindField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448942))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -799,17 +799,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448942))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttWaterField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448943))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -818,17 +818,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448943))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttDarkField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448944))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -837,17 +837,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448944))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mTypeSpellField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448945))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -856,17 +856,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448945))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mTypeTrapField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448946))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -875,17 +875,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448946))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mAttDivineField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448947))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -894,17 +894,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448947))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mSquareBlackField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448948))
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -913,17 +913,17 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && (ocard->code == 46448948))
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 		driver->setMaterial(matManager.mSelField);
 		if (pcard0) {
 			for (int z = 0; z < pcard0->overlayed.size(); z++) {
 				ClientCard* ocard = pcard0->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && ocard->is_selected)
 					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][z], 4, matManager.iRectangle, 2);
@@ -932,10 +932,10 @@ void Game::DrawMisc() {
 		else if (pcard1) {
 			for (int z = 0; z < pcard1->overlayed.size(); z++) {
 				ClientCard* ocard = pcard1->overlayed[z];
-				if (z >= 196)
+				if (z >= MAP_WIDTH * MAP_HEIGHT)
 					break;
 				if (ocard && ocard->is_selected)
-					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][195 - z], 4, matManager.iRectangle, 2);
+					driver->drawVertexPrimitiveList(&matManager.vFieldSquare[0][MAP_WIDTH * MAP_HEIGHT - 1 - z], 4, matManager.iRectangle, 2);
 			}
 		}
 	}

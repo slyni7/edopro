@@ -4,6 +4,7 @@
 #include <S3DVertex.h>
 #include <SMaterial.h>
 #include <array>
+#include "common.h"
 
 namespace ygo {
 
@@ -31,7 +32,7 @@ public:
 	QuadVertex vFieldSpell2[2];
 	//irr::video::S3DVertex vBackLine[76];
 	QuadVertex vFieldMzone[2][7];
-	QuadVertex vFieldSquare[2][196];
+	QuadVertex vFieldSquare[2][MAP_WIDTH * MAP_HEIGHT];
 	QuadVertex vSomewhere;
 //vs2015's array's const operator[] loses the type information if built with _ITERATOR_DEBUG_LEVEL
 //return a non const reference to the array in that case, so that it uses the non const operator[]
