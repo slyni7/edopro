@@ -649,6 +649,7 @@ void Game::Initialize() {
 	//
 
 	btnYdkeManage = AlignElementWithParent(env->addButton(Scale(205, 190, 295, 230), 0, BUTTON_DECK_YDKE_MANAGE, gDataManager->GetSysString(2083).data()));
+	defaultStrings.emplace_back(btnYdkeManage, 2083);
 	btnYdkeManage->setVisible(false);
 	btnYdkeManage->setEnabled(true);
 
@@ -703,6 +704,7 @@ void Game::Initialize() {
 	cbAttribute->setMaxSelectionRows(10);
 	ReloadCBAttribute();
 	stRace = env->addStaticText(gDataManager->GetSysString(1321).data(), Scale(10, 51, 70, 71), false, false, wFilter);
+	defaultStrings.emplace_back(stRace, 1321);
 	cbRace = AlignElementWithParent(AddComboBox(env, Scale(60, 49, 190, 69), wFilter, COMBOBOX_OTHER_FILT));
 	cbRace->setMaxSelectionRows(10);
 	ReloadCBRace();
@@ -1119,8 +1121,11 @@ static constexpr std::pair<epro::wstringview, irr::video::E_DRIVER_TYPE> support
 #endif
 #if EDOPRO_WINDOWS
 	{ L"Direct3D 9"_sv, irr::video::EDT_DIRECT3D9},
+#if (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
+	{ L"Direct3D 9on12"_sv, irr::video::EDT_DIRECT3D9_ON_12},
 #endif
-#if !EDOPRO_MACOS && IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9
+#endif
+#if !EDOPRO_MACOS && (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
 	{ L"OpenGL ES 1"_sv, irr::video::EDT_OGLES1 },
 	{ L"OpenGL ES 2"_sv, irr::video::EDT_OGLES2 },
 #endif
@@ -3499,9 +3504,9 @@ void Game::ReloadCBCoreLogOutput() {
 void Game::ReloadCBVsync() {
 	gSettings.cbVSync->clear();
 	auto max = 12118;
-#if (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9)
+#if (IRRLICHT_VERSION_MAJOR==1 && IRRLICHT_VERSION_MINOR==9) && EDOPRO_WINDOWS
 	const auto type = driver->getDriverType();
-	if(type == irr::video::EDT_DIRECT3D9)
+	if(type == irr::video::EDT_DIRECT3D9 || type == irr::video::EDT_DIRECT3D9_ON_12)
 #endif
 		max = 12115;
 	for(int i = 12114; i <= max; ++i)
@@ -3582,6 +3587,10 @@ void Game::ReloadElementsStrings() {
 	prev = gSettings.cbCoreLogOutput->getSelected();
 	ReloadCBCoreLogOutput();
 	gSettings.cbCoreLogOutput->setSelected(prev);
+
+	prev = gSettings.cbVSync->getSelected();
+	ReloadCBVsync();
+	gSettings.cbVSync->setSelected(prev);
 
 	((irr::gui::CGUICustomTable*)roomListTable)->setColumnText(1, gDataManager->GetSysString(1225).data());
 	((irr::gui::CGUICustomTable*)roomListTable)->setColumnText(2, gDataManager->GetSysString(1227).data());
