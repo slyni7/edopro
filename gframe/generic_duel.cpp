@@ -739,7 +739,7 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 			}
 			else if (!strcmp(curr, "info.pos")) {
 				card_info.pos = currvalue;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 				last_replay.Write<uint32_t>(card_info.code, false);
 			}
 			else if (line_count > 1)
@@ -754,21 +754,21 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 			last_replay.Write<uint32_t>(dueler.pdeck.main.size(), false);
 			for (int32_t i = (int32_t)dueler.pdeck.main.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.main[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.main[i]->code, false);
 			}
 			card_info.loc = LOCATION_EXTRA;
 			last_replay.Write<uint32_t>(dueler.pdeck.extra.size(), false);
 			for (int32_t i = (int32_t)dueler.pdeck.extra.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.extra[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.extra[i]->code, false);
 			}
 			/*test*/
 			card_info.loc = 0x80000000;
 			for (int32_t i = (int32_t)dueler.pdeck.side.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.side[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 			}
 		}
 		card_info.team = 1;
@@ -785,21 +785,21 @@ void GenericDuel::TPResult(DuelPlayer* dp, uint8_t tp) {
 			last_replay.Write<uint32_t>(dueler.pdeck.main.size(), false);
 			for (int32_t i = (int32_t)dueler.pdeck.main.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.main[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.main[i]->code, false);
 			}
 			card_info.loc = LOCATION_EXTRA;
 			last_replay.Write<uint32_t>(dueler.pdeck.extra.size(), false);
 			for (int32_t i = (int32_t)dueler.pdeck.extra.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.extra[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 				last_replay.Write<uint32_t>(dueler.pdeck.extra[i]->code, false);
 			}
 			/*test*/
 			card_info.loc = 0x80000000;
 			for (int32_t i = (int32_t)dueler.pdeck.side.size() - 1; i >= 0; --i) {
 				card_info.code = dueler.pdeck.side[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 			}
 		}
 	}

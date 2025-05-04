@@ -99,7 +99,7 @@ bool ImageManager::Initial() {
 	tUnknown = loadTextureFixedSize(EPRO_TEXT("unknown"sv), CARD_IMG_WIDTH, CARD_IMG_HEIGHT);
 	ASSERT_TEXTURE_LOADED(tUnknown, "unknown");
 
-	tCenter = loadTextureFixedSize(EPRO_TEXT("center"_sv), CARD_IMG_WIDTH, CARD_IMG_HEIGHT);
+	tCenter = loadTextureFixedSize(EPRO_TEXT("center"sv), CARD_IMG_WIDTH, CARD_IMG_HEIGHT);
 	ASSERT_TEXTURE_LOADED(tUnknown, "center");
 
 	tAct = loadTextureAnySize(EPRO_TEXT("act"sv));

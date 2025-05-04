@@ -436,6 +436,9 @@ struct game_field_elements {
 	irr::gui::IGUIStaticText* stCardPos[5];
 	irr::gui::IGUIScrollBar* scrCardList;
 	irr::gui::IGUIButton* btnSelectOK;
+
+	irr::gui::IGUIImage* iSelectNegate[5];
+
 	//card display
 	irr::gui::IGUIWindow* wCardDisplay;
 	irr::gui::CGUIImageButton* btnCardDisplay[5];

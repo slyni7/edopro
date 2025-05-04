@@ -143,7 +143,7 @@ restart:
 			card_info.loc = 0x80000000;
 			for (int32_t i = (int32_t)playerdeck.side.size() - 1; i >= 0; --i) {
 				card_info.code = playerdeck.side[i]->code;
-				OCG_DuelNewCard(pduel, card_info);
+				OCG_DuelNewCard(pduel, &card_info);
 			}
 		};
 		LoadDeck(0);
