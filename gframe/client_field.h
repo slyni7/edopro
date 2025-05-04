@@ -154,6 +154,7 @@ public:
 	void SetResponseSelectedOption() const;
 	void CancelOrFinish();
 	void ShowPileDisplayCards(int location, int player);
+	void SendRPSResult(uint8_t i);
 };
 
 }

@@ -52,7 +52,7 @@ public:
 	const Deck& GetCurrentDeck() const {
 		return current_deck;
 	}
-	bool SetCurrentDeckFromFile(epro::path_stringview file, bool separated = false);
+	bool SetCurrentDeckFromFile(epro::path_stringview file, bool separated = false, RITUAL_LOCATION rituals_in_extra = RITUAL_LOCATION::DEFAULT);
 	void SetCurrentDeck(Deck new_deck) {
 		current_deck = std::move(new_deck);
 		RefreshLimitationStatus();
@@ -137,6 +137,7 @@ public:
 	uint16_t extra_xyz_count;
 	uint16_t extra_synchro_count;
 	uint16_t extra_link_count;
+	uint16_t extra_rush_ritual_count;
 
 	uint16_t side_monster_count;
 	uint16_t side_spell_count;

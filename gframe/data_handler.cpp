@@ -1,10 +1,11 @@
 #include "data_handler.h"
-#include <curl/curl.h>
 #include <irrlicht.h>
 #include "config.h"
+#include "cli_args.h"
 #include "utils_gui.h"
 #include "deck_manager.h"
 #include "logging.h"
+#include "fmt.h"
 #include "utils.h"
 #include "windbot.h"
 #include "windbot_panel.h"
@@ -127,9 +128,10 @@ void DataHandler::LoadZipArchives() {
 DataHandler::DataHandler() {
 	configs = std::make_unique<GameConfig>();
 	gGameConfig = configs.get();
-	tmp_device = nullptr;
-#if EDOPRO_IOS
+#if !EDOPRO_ANDROID
 	tmp_device = GUIUtils::CreateDevice(configs.get());
+#endif
+#if EDOPRO_IOS
 	if(tmp_device->getVideoDriver())
 		porting::exposed_data = &tmp_device->getVideoDriver()->getExposedVideoData();
 	Utils::OSOperator = new irr::COSiOSOperator();
@@ -138,7 +140,6 @@ DataHandler::DataHandler() {
 	Utils::OSOperator = new irr::COSAndroidOperator();
 	configs->ssl_certificate_path = epro::format("{}/cacert.pem", porting::internal_storage);
 #else
-	tmp_device = GUIUtils::CreateDevice(configs.get());
 	Utils::OSOperator = tmp_device->getGUIEnvironment()->getOSOperator();
 	Utils::OSOperator->grab();
 	if(configs->override_ssl_certificate_path.size()) {
@@ -157,7 +158,23 @@ DataHandler::DataHandler() {
 	LoadZipArchives();
 	deckManager = std::make_unique<DeckManager>();
 	gitManager = std::make_unique<RepoManager>();
-	sounds = std::make_unique<SoundManager>(configs->soundVolume / 100.0, configs->musicVolume / 100.0, configs->enablesound, configs->enablemusic);
+	auto sound_backend = SoundManager::DEFAULT;
+	if constexpr(SoundManager::HasMultipleBackends()) {
+		auto sound_backend_valid = [wanted_backend = configs->sound_backend]() -> bool {
+			for(const auto& backend : SoundManager::GetSupportedBackends()) {
+				if(backend == wanted_backend)
+					return true;
+			}
+			return false;
+		}();
+		if(!sound_backend_valid) {
+			auto old = std::exchange(configs->sound_backend, SoundManager::DEFAULT);
+			epro::print("Wanted {} audio backend but not supported, using {} instead\n", old, SoundManager::GetDefaultBackend());
+		}
+		sound_backend = configs->sound_backend;
+	}
+	sounds = std::make_unique<SoundManager>(configs->soundVolume / 100.0, configs->musicVolume / 100.0, configs->enablesound, configs->enablemusic, sound_backend);
+	gitManager->ToggleReadOnly(cli_args[REPOS_READ_ONLY].enabled);
 	gitManager->LoadRepositoriesFromJson(configs->user_configs);
 	gitManager->LoadRepositoriesFromJson(configs->configs);
 	if(gitManager->TerminateIfNothingLoaded())

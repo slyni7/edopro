@@ -4,10 +4,10 @@ if _ACTION=="xcode4" then
 end
 local ygopro_config=function(static_core)
 	kind "WindowedApp"
-	cppdialect "C++14"
+	cppdialect "C++17"
 	rtti "Off"
 	files { "**.cpp", "**.cc", "**.c", "**.h", "**.hpp" }
-	excludes { "lzma/**", "sound_sdlmixer.*", "sound_irrklang.*", "irrklang_dynamic_loader.*", "sound_sfml.*", "sfAudio/**", "Android/**" }
+	excludes { "lzma/**", "SoundBackends/**", "sfAudio/**", "Android/**" }
 	if _OPTIONS["oldwindows"] then
 		filter {'action:vs*'}
 			files { "../overwrites/overwrites.cpp", "../overwrites/loader.asm" }
@@ -36,13 +36,6 @@ local ygopro_config=function(static_core)
 		}
 	filter {}
 
-	if static_core then
-		if _OPTIONS["lua-path"] then
-			includedirs{ _OPTIONS["lua-path"] .. "/include" }
-			libdirs{ _OPTIONS["lua-path"] .. "/lib" }
-		end
-	end
-
 	defines "CURL_STATICLIB"
 	if _OPTIONS["pics"] then
 		defines { "DEFAULT_PIC_URL=" .. _OPTIONS["pics"] }
@@ -53,7 +46,7 @@ local ygopro_config=function(static_core)
 	if _OPTIONS["covers"] then
 		defines { "DEFAULT_COVER_URL=" .. _OPTIONS["covers"] }
 	end
-	if _OPTIONS["discord"] then
+	if _OPTIONS["discord"] and not os.istarget("ios") then
 		defines { "DISCORD_APP_ID=" .. _OPTIONS["discord"] }
 	end
 	if _OPTIONS["update-url"] then
@@ -79,16 +72,16 @@ local ygopro_config=function(static_core)
 			links { "CoreAudio.framework", "AudioToolbox.framework", "CoreVideo.framework", "ForceFeedback.framework", "Carbon.framework" }
 		filter {}
 	end
-	if _OPTIONS["sound"] then
-		if _OPTIONS["sound"]=="irrklang" then
+	if next(sounds) ~= nil then
+		if sounds.irrklang then
 			defines "YGOPRO_USE_IRRKLANG"
 			_includedirs "../irrKlang/include"
-			files "sound_irrklang.*"
-			files "irrklang_dynamic_loader.*"
+			files "SoundBackends/irrklang/**"
+			filter {}
 		end
-		if _OPTIONS["sound"]=="sdl-mixer" then
+		if sounds["sdl-mixer"] then
 			defines "YGOPRO_USE_SDL_MIXER"
-			files "sound_sdlmixer.*"
+			files "SoundBackends/sdlmixer/**"
 			filter "system:windows"
 				links { "version", "setupapi" }
 			filter { "system:not windows", "configurations:Debug" }
@@ -99,10 +92,11 @@ local ygopro_config=function(static_core)
 				links { "SDL2_mixer", "FLAC", "mpg123", "vorbisfile", "vorbis", "ogg" }
 			filter "system:macosx"
 				links { "CoreAudio.framework", "AudioToolbox.framework", "CoreVideo.framework", "ForceFeedback.framework", "Carbon.framework" }
+			filter {}
 		end
-		if _OPTIONS["sound"]=="sfml" then
+		if sounds.sfml then
 			defines "YGOPRO_USE_SFML"
-			files "sound_sfml.*"
+			files "SoundBackends/sfml/**"
 			_includedirs "../sfAudio/include"
 			links { "sfAudio" }
 			filter "system:not windows"
@@ -119,7 +113,23 @@ local ygopro_config=function(static_core)
 				if _OPTIONS["use-mpg123"] then
 					links { "mpg123" }
 				end
+			filter {}
 		end
+		if sounds.miniaudio then
+			defines "YGOPRO_USE_MINIAUDIO"
+			files "SoundBackends/miniaudio/**"
+			filter { "system:ios", "files:**sound_miniaudio.cpp" }
+				compileas "Objective-C++"
+			filter "system:macosx or ios"
+				defines "MA_NO_RUNTIME_LINKING"
+				links { "CoreAudio.framework", "AudioToolbox.framework" }
+			filter "system:macosx"
+				links { "AudioUnit.framework" }
+			filter "system:ios"
+				links { "AVFoundation.framework" }
+			filter {}
+		end
+		files "SoundBackends/sound_threaded_backend.*"
 	end
 
 	filter "system:windows"
@@ -138,7 +148,7 @@ local ygopro_config=function(static_core)
 		defines "IRR_COMPILE_WITH_DX9_DEV_PACK"
 
 	filter "system:not windows"
-		if _OPTIONS["discord"] then
+		if _OPTIONS["discord"] and not os.istarget("ios") then
 			links "discord-rpc"
 		end
 		links { "sqlite3", "event", "event_pthreads", "dl", "git2", "ssh2" }
@@ -153,13 +163,10 @@ local ygopro_config=function(static_core)
 		links { "ssl", "crypto" }
 		if os.istarget("macosx") then
 			files { "*.m", "*.mm" }
-			links { "ldap", "Cocoa.framework", "IOKit.framework", "OpenGL.framework", "Security.framework" }
+			links { "ldap", "Cocoa.framework", "IOKit.framework", "OpenGL.framework", "Security.framework", "SystemConfiguration.framework" }
 		else
 			files { "iOS/**" }
 			links { "UIKit.framework", "CoreMotion.framework", "OpenGLES.framework", "Foundation.framework", "QuartzCore.framework" }
-		end
-		if static_core then
-			links "lua"
 		end
 
 	filter { "system:macosx or ios", "configurations:Debug" }
@@ -187,13 +194,10 @@ local ygopro_config=function(static_core)
 		end
 		links { "fmt", "curl", "freetype" }
 
-	filter "system:linux"
-		if static_core then
-			links  "lua"
-		end
-		if _OPTIONS["vcpkg-root"] then
+	if _OPTIONS["vcpkg-root"] then
+		filter "system:linux"
 			links { "ssl", "crypto", "z", "jpeg" }
-		end
+	end
 
 	if not os.istarget("windows") then
 		if _OPTIONS["vcpkg-root"] then
@@ -211,9 +215,6 @@ local ygopro_config=function(static_core)
 
 
 	filter { "system:windows", "action:not vs*" }
-		if static_core then
-			links "lua-c++"
-		end
 		if _OPTIONS["vcpkg-root"] then
 			links { "ssl", "crypto", "zlib", "jpeg" }
 		end
@@ -222,14 +223,19 @@ local ygopro_config=function(static_core)
 		links { "pthread" }
 
 	filter "system:windows"
-		links { "wbemuuid", "opengl32", "ws2_32", "winmm", "gdi32", "kernel32", "user32", "imm32", "wldap32", "crypt32", "advapi32", "rpcrt4", "ole32", "OleAut32", "uuid", "winhttp" }
+		links { "wbemuuid", "opengl32", "ws2_32", "winmm", "gdi32", "kernel32", "user32", "imm32", "wldap32", "crypt32", "advapi32", "rpcrt4", "ole32", "OleAut32", "uuid", "winhttp", "Secur32" }
 		if not _OPTIONS["oldwindows"] then
 			links "Iphlpapi"
 		end
+
+	if static_core then
+		filter {}
+			links "lua"
+	end
 end
 
 include "lzma/."
-if _OPTIONS["sound"]=="sfml" then
+if sounds.sfml then
 	include "../sfAudio"
 end
 

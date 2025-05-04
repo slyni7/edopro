@@ -8,13 +8,9 @@ newoption {
 }
 newoption {
 	trigger = "sound",
-	value = "backend",
+	value = "backends",
 	description = "Choose sound backend",
-	allowed = {
-		{ "irrklang",  "irrklang" },
-		{ "sdl-mixer",  "SDL2-mixer" },
-		{ "sfml",  "SFML" }
-	}
+	description = "Sound backends for the solution, allowed values are any combination of irrklang, sdl-mixer, sfml and miniaudio, comma separated"
 }
 newoption {
 	trigger = "use-mpg123",
@@ -62,7 +58,7 @@ newoption {
 }
 newoption {
 	trigger = "no-core",
-	description = "Ignore the ocgcore subproject and only generate the solution for yroprodll"
+	description = "Ignore the ocgcore subproject and only generate the solution for ygoprodll"
 }
 newoption {
 	trigger = "architecture",
@@ -74,10 +70,6 @@ newoption {
 	value = "font",
 	description = "Path to a font file that will be bundled in the client and used as fallback font for missing glyphs"
 }
-newoption {
-	trigger = "lua-path",
-	description = "Path where the lua library has been installed"
-}
 
 local function default_arch()
 	if os.istarget("linux") or os.istarget("macosx") then return "x64" end
@@ -88,6 +80,10 @@ end
 local function valid_arch(arch)
 	return arch == "x86" or arch == "x64" or arch == "arm64" or arch == "armv7"
 		or arch == "x86-iossim" or arch == "x64-iossim" or arch == "arm64-iossim"
+end
+
+local function valid_sound(sound)
+	return sound == "irrklang" or sound == "sdl-mixer" or sound == "sfml" or sound == "miniaudio"
 end
 
 local absolute_vcpkg_path =(function()
@@ -130,6 +126,18 @@ if _OPTIONS["architecture"] then
 end
 
 if #archs == 0 then archs = { default_arch() } end
+
+sounds={}
+
+if _OPTIONS["sound"] then
+	print(_OPTIONS["sound"])
+	for sound in string.gmatch(_OPTIONS["sound"], "([^,]+)") do
+		if valid_sound(sound) then
+			print(sound)
+			sounds[sound]=true
+		end
+	end
+end
 
 local _includedirs=includedirs
 if _ACTION=="xcode4" then
@@ -194,9 +202,7 @@ workspace "ygo"
 	end
 
 	if _OPTIONS["oldwindows"] then
-		filter { "action:vs2015" }
-			toolset "v140_xp"
-		filter { "action:vs*", "action:not vs2015" }
+		filter { "action:vs*" }
 			toolset "v141_xp"
 		filter {}
 	else

@@ -1,5 +1,4 @@
 #include <stack>
-#include <fmt/format.h>
 #include "utils.h"
 #include "game_config.h"
 #include <IGUIWindow.h>
@@ -23,6 +22,7 @@
 #include "CGUIImageButton/CGUIImageButton.h"
 #include "CGUITTFont/CGUITTFont.h"
 #include "custom_skin_enum.h"
+#include "fmt.h"
 
 namespace ygo {
 
@@ -458,7 +458,7 @@ void ClientField::ShowSelectCard(bool buttonok, bool chain) {
 			}
 		} else {
 			if(sort_list[i]) {
-				curstring->setText(fmt::to_wstring(sort_list[i]).data());
+				curstring->setText(epro::to_wstring(sort_list[i]).data());
 			} else
 				curstring->setText(L"");
 			curstring->setBackgroundColor(skin::DUELFIELD_CARD_SELF_WINDOW_BACKGROUND_VAL);
@@ -902,7 +902,7 @@ void ClientField::GetCardDrawCoordinates(ClientCard* pcard, irr::core::vector3df
 			}
 			if(pcard->overlayTarget->location == LOCATION_SZONE)
 				return matManager.getSzone()[controler][pcard->overlayTarget->sequence];
-			/*fallthrough*/
+			[[fallthrough]];
 		default: return nullptr;
 		}
 	};

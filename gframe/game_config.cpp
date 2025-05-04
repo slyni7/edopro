@@ -1,13 +1,13 @@
 #include <IrrCompileConfig.h>
 #include <path.h>
 #include "game_config.h"
-#include <fmt/format.h>
 #include "bufferio.h"
 #include "porting.h"
 #include "utils.h"
 #include "config.h"
 #include "logging.h"
 #include "file_stream.h"
+#include "fmt.h"
 
 namespace ygo {
 
@@ -46,14 +46,21 @@ GameConfig::GameConfig() {
 
 template<typename T, typename tag = T>
 T parseOption(std::string& value) {
-	if(std::is_unsigned<T>::value) {
-		if(std::is_same<T, uint64_t>::value)
-			return static_cast<T>(std::stoull(value));
+	if constexpr(std::is_unsigned_v<T>) {
 		return static_cast<T>(std::stoul(value));
+	} else {
+		return static_cast<T>(std::stoi(value));
 	}
-	if(std::is_same<T, int64_t>::value)
-		return static_cast<T>(std::stoll(value));
-	return static_cast<T>(std::stoi(value));
+}
+
+template<>
+uint64_t parseOption<uint64_t>(std::string& value) {
+	return static_cast<uint64_t>(std::stoull(value));
+}
+
+template<>
+int64_t parseOption<int64_t>(std::string& value) {
+	return static_cast<int64_t>(std::stoll(value));
 }
 
 template<>
@@ -153,18 +160,35 @@ int parseOption<int, ygo::GameConfig::MusicConfig>(std::string& value) {
 }
 
 template<>
+ygo::SoundManager::BACKEND parseOption<ygo::SoundManager::BACKEND>(std::string& value) {
+	Utils::ToUpperNoAccentsSelf(value);
+	if(value == "IRRKLANG")
+		return SoundManager::IRRKLANG;
+	else if(value == "SDL")
+		return SoundManager::SDL;
+	else if(value == "SFML")
+		return SoundManager::SFML;
+	else if(value == "MINIAUDIO")
+		return SoundManager::MINIAUDIO;
+	else if(value == "NONE")
+		return SoundManager::NONE;
+	else
+		return SoundManager::DEFAULT;
+}
+
+template<>
 uint8_t parseOption<uint8_t, ygo::GameConfig::BoolMaybeUndefined>(std::string& value) {
 	return std::min<uint8_t>(static_cast<uint8_t>(std::stoul(value)), 2);
 }
 
 template<typename T>
 std::string serializeOption(const T& value) {
-	return fmt::to_string(value);
+	return epro::to_string(value);
 }
 
 template<>
 std::string serializeOption(const uint8_t& value) {
-	return fmt::to_string((int)value);
+	return epro::to_string((int)value);
 }
 
 template<>
@@ -174,7 +198,7 @@ std::string serializeOption(const float& value) {
 
 template<>
 std::string serializeOption(const bool& value) {
-	return fmt::to_string((int)value);
+	return epro::to_string((int)value);
 }
 
 template<>
@@ -184,7 +208,7 @@ std::string serializeOption<std::wstring>(const std::wstring& value) {
 
 template<>
 std::string serializeOption(const ygo::GameConfig::TextFont& value) {
-	return epro::format("{} {}", Utils::ToUTF8IfNeeded(value.font), value.size);
+	return epro::format("{} {:d}", Utils::ToUTF8IfNeeded(value.font), value.size);
 }
 
 template<>
