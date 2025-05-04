@@ -452,14 +452,6 @@ void Game::Initialize() {
 		btnCardSelect[i] = irr::gui::CGUIImageButton::addImageButton(env, Scale(30 + 125 * i, 55, 150 + 125 * i, 225), wCardSelect, BUTTON_CARD_0 + i);
 		btnCardSelect[i]->setImageSize(imgsize);
 	}
-
-	for (int i = 0; i < 5; ++i) {
-		iSelectNegate[i] = AlignElementWithParent(env->addImage(Scale(40 + 125 * i, 90, 140 + 125 * i, 190), wCardSelect));
-		iSelectNegate[i]->setImage(imageManager.tNegated);
-		iSelectNegate[i]->setScaleImage(true);
-		iSelectNegate[i]->setUseAlphaChannel(true);
-	}
-
 	scrCardList = env->addScrollBar(true, Scale(30, 235, 650, 255), wCardSelect, SCROLL_CARD_SELECT);
 	scrCardList->setLargeStep(scrCardList->getMax());
 	btnSelectOK = env->addButton(Scale(300, 265, 380, 290), wCardSelect, BUTTON_CARD_SEL_OK, gDataManager->GetSysString(1211).data());
