@@ -8,6 +8,9 @@
 
 #include <stdint.h> /* uint64_t */
 
+#define MAP_WIDTH		14
+#define MAP_HEIGHT		14
+
 /* Locations */
 #define LOCATION_DECK    0x01
 #define LOCATION_HAND    0x02
@@ -18,6 +21,7 @@
 #define LOCATION_EXTRA   0x40
 #define LOCATION_OVERLAY 0x80
 #define LOCATION_ONFIELD (LOCATION_MZONE | LOCATION_SZONE)
+#define LOCATION_SQUARE  0x800
 
 /* Positions */
 #define POS_FACEUP_ATTACK    0x1
